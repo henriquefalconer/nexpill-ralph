@@ -89,48 +89,52 @@ docker sandbox --help  # sanity check — should list subcommands
 
 The vendored source (`punycode.js`, `tests/tests.js`, `LICENSE-MIT.txt`) and `TARGET.md` are already checked in on `main`. You just need your own branch and an authenticated sandbox.
 
+### 1. Fork and clone
+
+`gh repo fork` creates `<your-user>/nexpill-ralph` on GitHub, clones it locally, sets `origin` to your fork, and adds `upstream` pointing at `henriquefalconer/nexpill-ralph`.
+
 ```bash
-# 1. Fork this repo to your GitHub account and clone your fork in one shot.
-#    `gh repo fork` creates <your-user>/nexpill-ralph, clones it locally,
-#    sets origin → your fork, and upstream → henriquefalconer/nexpill-ralph.
 gh repo fork henriquefalconer/nexpill-ralph --clone --remote
 cd nexpill-ralph
+```
 
-# (Optional) confirm the remotes look right
-git remote -v
-# origin    git@github.com:<your-user>/nexpill-ralph.git (fetch/push)
-# upstream  https://github.com/henriquefalconer/nexpill-ralph.git (fetch/push)
 
-# 2. Create the sandbox and log into Claude Code.
-#    Running ./ds with no arguments invokes `docker sandbox run claude .` on the repo,
-#    which builds the sandbox image (~2 min, one time) and drops you into an interactive
-#    claude session.
+### 2. Create the sandbox and log into Claude Code
+
+Running `./ds` with no arguments invokes `docker sandbox run claude .` on the repo, which builds the sandbox image (~2 min, one time) and drops you into an interactive claude session.
+
+```bash
 ./ds
-# → claude starts interactively. Pick "Log in with your Anthropic account"
-#   (the subscription flow), complete OAuth in the browser, then exit claude
-#   with Ctrl+C twice. Credentials land in the sandbox and persist for every
-#   subsequent `./ds <cmd>` call.
+```
 
-# 3. Authenticate git inside the sandbox so Ralph's auto-push works end-to-end.
-#    First, create a fine-grained Personal Access Token scoped to ONLY your fork:
-#
-#      → https://github.com/settings/tokens?type=beta
-#        • Token name:             anything (e.g. "nexpill-ralph")
-#        • Expiration:             whatever fits your workshop timebox
-#        • Repository access:      "Only select repositories" → pick <your-user>/nexpill-ralph
-#        • Repository permissions: Contents → Read and write
-#                                  (Metadata → Read-only auto-selects; required)
-#        • Generate token, copy it once (you won't see it again)
-#
-#    Now cache it inside the sandbox (two calls — configure the helper, then
-#    run one authenticated operation that triggers the prompt):
-./ds git config --global credential.helper store
-./ds git ls-remote origin
-#    Username for 'https://github.com': <your-user>
-#    Password for 'https://<your-user>@github.com': <paste the PAT — input is hidden>
-#    Credentials land in the sandbox's ~/.git-credentials and persist across ./ds calls.
+Claude starts interactively. Pick **"Log in with your Anthropic account"** (the subscription flow), complete OAuth in the browser, then exit claude with Ctrl+C twice. Credentials land in the sandbox and persist for every subsequent `./ds <cmd>` call.
 
-# 4. Personal branch — everyone runs in parallel, nobody shares a branch
+### 3. Authenticate git inside the sandbox
+
+Ralph's auto-push needs cached credentials inside the sandbox. First, create a fine-grained Personal Access Token scoped to **only your fork**:
+
+- Go to <https://github.com/settings/tokens?type=beta>
+- **Token name:** anything (e.g. `nexpill-ralph`)
+- **Expiration:** whatever fits your workshop timebox
+- **Repository access:** "Only select repositories" → pick `<your-user>/nexpill-ralph`
+- **Repository permissions:** Contents → Read and write (Metadata → Read-only auto-selects; required)
+- Generate the token and copy it once — you won't see it again.
+
+Now cache it inside the sandbox. The first `git push` triggers the username/password prompt; paste the PAT as the password.
+
+```bash
+./ds git push
+# Username for 'https://github.com': <your-user>
+# Password for 'https://<your-user>@github.com': <paste the PAT — input is hidden>
+```
+
+Credentials land in the sandbox's `~/.git-credentials` and persist across `./ds` calls.
+
+### 4. Personal branch
+
+Everyone runs in parallel; nobody shares a branch.
+
+```bash
 git checkout -b workshop/<your-name>
 git push -u origin workshop/<your-name>
 ```
