@@ -82,7 +82,9 @@ docker run --rm hello-world
 
 ---
 
-## Stage 0 — Clone, vendor, log in
+## Stage 0 — Clone, branch, log in
+
+The vendored source (`punycode.js`, `tests/tests.js`, `LICENSE-MIT.txt`) and `TARGET.md` are already checked in on `main`. You just need your own branch and an authenticated sandbox.
 
 ```bash
 # 1. Fork this repo on GitHub, then clone your fork
@@ -91,58 +93,26 @@ cd nexpill-ralph
 
 # 2. Personal branch — everyone runs in parallel, nobody shares a branch
 git checkout -b workshop/<your-name>
+git push -u origin workshop/<your-name>
 
 # 3. Log into Claude Code inside the sandbox (builds the image on first run)
 ./ds login
 # → prints a URL + device code; open URL on any device, paste code, approve.
 #   Credentials land in your host ~/.claude and persist across runs.
-
-# 4. Vendor punycode.js into the repo root
-git clone --depth 1 https://github.com/mathiasbynens/punycode.js /tmp/punycode-src
-rm -rf /tmp/punycode-src/.git
-mv /tmp/punycode-src/README.md /tmp/punycode-src/SOURCE-README.md   # avoid clobber
-cp -R /tmp/punycode-src/. .
-
-# 5. Tell Ralph where the port goes
-cat > TARGET.md <<'EOF'
-# Port Target
-
-- **Language**: Go 1.22+
-- **Output directory**: `port/`
-- **Module path**: `github.com/<your-handle>/punycode-port`
-- **Package**: `punycode`
-- **Test command**: `cd port && go test ./...`
-- **Style**: idiomatic Go — functions over classes, explicit error returns, table-driven tests.
-- **Scope**: port every exported function from `punycode.js` (`decode`, `encode`, `toUnicode`, `toASCII`, `ucs2.decode`, `ucs2.encode`).
-- **Fidelity**: every RFC test vector from the original test suite must pass in Go.
-EOF
-
-# 6. Commit and push the vendored baseline
-git add -A
-git commit -m "workshop: vendor punycode.js + target spec"
-git push -u origin workshop/<your-name>
-
-# 7. Branch off so Ralph's work lives on its own branch, keeping the vendored
-#    baseline clean for later diffs
-git checkout -b workshop/<your-name>/port
-git push -u origin workshop/<your-name>/port
 ```
 
-Ralph's auto-push runs against whatever branch you're on when you invoke `./ds`, so Stages 1–4 will land on `workshop/<your-name>/port`. At the end you can `git diff workshop/<your-name>..workshop/<your-name>/port` to see exactly what Ralph produced.
+Ralph's auto-push runs against whatever branch you're on when you invoke `./ds`, so Stages 1–4 land on `workshop/<your-name>`. At the end you can `git diff main..workshop/<your-name>` to see exactly what Ralph produced.
 
-After Stage 0 your tree looks like:
+Your tree already looks like:
 
 ```
 nexpill-ralph/
 ├── ralph/               # Ralph tooling — don't touch
 ├── ds                   # sandboxed ralph wrapper (builds its own image)
 ├── punycode.js          # vendored source
-├── punycode.es6.js      # vendored source (ES6 twin)
-├── tests/               # vendored tests
-├── package.json         # vendored
-├── LICENSE-MIT.txt      # vendored
-├── SOURCE-README.md     # punycode.js's original README, renamed
-├── TARGET.md            # port target spec — you just wrote this
+├── tests/tests.js       # vendored tests
+├── LICENSE-MIT.txt      # vendored license (MIT)
+├── TARGET.md            # port target spec
 └── README.md            # this file
 ```
 
@@ -173,13 +143,11 @@ Ralph reads every test file, fans out one subagent per file, writes one Markdown
 
 ```bash
 ./ds plan 8 --goal \
-  "for every non-test JavaScript source file at the repo root (punycode.js \
-   and punycode.es6.js), use a separate subagent to produce \
-   specs/impl/<module>.md documenting public and internal behavior, invariants, \
-   data flow, and edge cases, with citations to <path>:<line>. These specs \
-   must be sufficient for a from-scratch reimplementation in any language — \
-   do not use JavaScript syntax in the prose. If punycode.js and punycode.es6.js \
-   are semantic duplicates, produce one spec and note the equivalence."
+  "use a subagent to read punycode.js in full and produce specs/impl/punycode.md \
+   documenting public and internal behavior, invariants, data flow, and edge \
+   cases, with citations to punycode.js:<line>. The spec must be sufficient for \
+   a from-scratch reimplementation in any language — do not use JavaScript \
+   syntax in the prose. Follow the RFC 3492 structure where it maps naturally."
 ```
 
 **Checkpoint**: open `specs/impl/punycode.md`. It should read like the RFC 3492 algorithm description, with line citations — not like JavaScript with comments.
