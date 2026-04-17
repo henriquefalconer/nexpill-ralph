@@ -64,6 +64,10 @@ The script is intentionally language-agnostic — no `npm run`, no `make`, no ne
 
 You only need **Docker** and **git** on the host. Everything else — Claude Code, Go, ralph tooling — lives inside the sandbox.
 
+**Prerequisites:**
+
+- Install Docker Desktop (version 4.50+) for `docker sandbox`: <https://www.docker.com/products/docker-desktop/>
+
 > **Anthropic subscription**: you need one. **A Max plan is strongly recommended** for Ralph — each plan iteration fans out up to 500 Sonnet subagents plus Opus synthesis. Pro will throttle before a stage finishes; Max gives roughly 5× the headroom.
 
 ### macOS
