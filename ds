@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# ds — run ralph inside a Docker sandbox via `docker sandbox exec`.
-# Usage: ./ds [plan|security] [max_iter] [--goal "..."] [--ref-branch ...]
-#        ./ds shell          # open an interactive shell in the sandbox
-#        ./ds login          # run `claude login` in the sandbox (once)
+# ds — run a command inside the project's Docker sandbox.
+# Usage: ./ds <cmd> [args...]
 
 set -euo pipefail
 
@@ -14,13 +12,11 @@ if ! command -v docker >/dev/null 2>&1; then
     exit 1
 fi
 
-case "${1:-}" in
-    shell) shift; set -- bash "$@" ;;
-    login) shift; set -- claude login "$@" ;;
-    *)     set -- ./ralph/ralph.sh "$@" ;;
-esac
+QUOTED_ROOT=$(printf '%q' "$ROOT")
+QUOTED_CMD=$(printf '%q ' "$@")
 
-INNER_CMD="cd \"$ROOT\" && $*"
+# Print exactly what will run
+printf "Running $* in $SANDBOX_NAME sandbox:\n"
+printf '\n'
 
-printf 'Running %s in %s sandbox:\n\n' "$*" "$SANDBOX_NAME"
-exec docker sandbox exec -it "$SANDBOX_NAME" sh -c "$INNER_CMD"
+exec docker sandbox exec -it "$SANDBOX_NAME" sh -c "cd $QUOTED_ROOT && $QUOTED_CMD"

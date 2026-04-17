@@ -130,13 +130,14 @@ set -- "${POSITIONAL[@]:-}"
 if [ "${1:-}" = "plan" ]; then
     MODE="plan"
     shift
-    MAX_ITERATIONS="${1:-0}"
-    [[ "$MAX_ITERATIONS" =~ ^[0-9]+$ ]] && shift || MAX_ITERATIONS=0
+    MAX_ITERATIONS="${1:-1}"
+    [[ "$MAX_ITERATIONS" =~ ^[0-9]+$ ]] && shift || MAX_ITERATIONS=1
 elif [ "${1:-}" = "security" ]; then
     MODE="security"
     shift
     MAX_ITERATIONS="${1:-0}"
-    [[ "$MAX_ITERATIONS" =~ ^[0-9]+$ ]] && shift || MAX_ITERATIONS=0
+    MAX_ITERATIONS="${1:-1}"
+    [[ "$MAX_ITERATIONS" =~ ^[0-9]+$ ]] && shift || MAX_ITERATIONS=1
 elif [[ "${1:-}" =~ ^[0-9]+$ ]]; then
     MODE="build"
     MAX_ITERATIONS="$1"
@@ -277,9 +278,9 @@ TAIL_PID=$!
 # ────────────────────────────────────────────────
 
 if [ "$MAX_ITERATIONS" -gt 0 ]; then
-    echo "Launching Ralph - Branch: $CURRENT_BRANCH - Max iterations: $MAX_ITERATIONS"
+    echo "Launching Ralph - Mode: $MODE - Branch: $CURRENT_BRANCH - Max iterations: $MAX_ITERATIONS"
 else
-    echo "Launching Ralph - Branch: $CURRENT_BRANCH - Max iterations: unlimited"
+    echo "Launching Ralph - Mode: $MODE - Branch: $CURRENT_BRANCH - Max iterations: unlimited"
 fi
 
 # ────────────────────────────────────────────────

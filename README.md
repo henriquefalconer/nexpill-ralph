@@ -34,24 +34,20 @@ Everyone in the room runs the same four stages in parallel, each on their own br
 Everything happens inside a Docker sandbox — both the first `claude login` and every ralph invocation. The raw flow is:
 
 ```bash
-# 1. Log in once (interactive device-code flow, run inside the sandbox)
-docker run --rm -it \
-  -v "$PWD:/workspace" -v "$HOME/.claude:/root/.claude" \
-  ralph-sandbox claude login
+# 1. Log in once (run claude interactively inside the sandbox, pick the Anthropic-subscription login, then exit with Ctrl+C twice)
+docker run --rm -it -v "$PWD:/workspace" -v "$HOME/.claude:/root/.claude" ralph-sandbox claude
 
 # 2. Run ralph inside the same sandbox
-docker run --rm -it \
-  -v "$PWD:/workspace" -v "$HOME/.claude:/root/.claude" \
-  ralph-sandbox ./ralph/ralph.sh plan 5 --goal "..."
+docker run --rm -it -v "$PWD:/workspace" -v "$HOME/.claude:/root/.claude" ralph-sandbox ./ralph/ralph.sh plan --goal "..."
 ```
 
-`./ds` is a shortcut for those `docker run` invocations — nothing more. The verbs match 1:1:
+`./ds` is a thin pass-through for `docker sandbox exec` — it runs whatever you hand it inside the project's sandbox, from the repo root. No built-in verbs, no ralph-specific knowledge:
 
 ```text
-./ds login              ≡  docker run … ralph-sandbox claude login
-./ds plan 5 --goal …    ≡  docker run … ralph-sandbox ./ralph/ralph.sh plan 5 --goal …
-./ds 30                 ≡  docker run … ralph-sandbox ./ralph/ralph.sh 30
-./ds shell              ≡  docker run … ralph-sandbox bash          # for go test, debugging
+./ds claude                    ≡  docker sandbox exec … claude      # interactive login
+./ds ralph/ralph.sh plan --goal …  ≡  docker sandbox exec … ralph/ralph.sh plan --goal …
+./ds ralph/ralph.sh             ≡  docker sandbox exec … ralph/ralph.sh
+./ds bash                      ≡  docker sandbox exec … bash          # for go test, debugging
 ```
 
 The first invocation of `./ds` builds the sandbox image (~2 min, one time). Every call after that reuses the cached image. Why sandbox at all: Ralph passes `--dangerously-skip-permissions` to Claude Code, giving the agent full filesystem access — the sandbox confines that access to the repo directory plus the mounts.
@@ -135,9 +131,10 @@ git checkout -b workshop/<your-name>
 git push -u origin workshop/<your-name>
 
 # 3. Log into Claude Code inside the sandbox (builds the image on first run)
-./ds login
-# → prints a URL + device code; open URL on any device, paste code, approve.
-#   Credentials land in your host ~/.claude and persist across runs.
+./ds claude
+# → claude starts interactively. Pick "Log in with your Anthropic account"
+#   (the subscription flow), complete OAuth in the browser, then exit claude
+#   with Ctrl+C twice. Credentials land in your host ~/.claude and persist.
 ```
 
 Ralph's auto-push runs against whatever branch you're on when you invoke `./ds`, so Stages 1–4 land on `workshop/<your-name>`. At the end you can `git diff main..workshop/<your-name>` to see exactly what Ralph produced.
@@ -170,15 +167,10 @@ nexpill-ralph/
 Ralph reads every test file, fans out one subagent per file, writes one Markdown spec per test file. Output lands in `specs/tests/`.
 
 ```bash
-./ds plan 5 --goal \
-  "for every test file matching tests/**/*.js in this repo, use a separate \
-   subagent to produce specs/tests/<basename>.md capturing EVERY behavior the \
-   tests assert, in language-agnostic prose, with citations tests/<path>:<line>. \
-   Describe what the tests observe and require, never how the implementation \
-   works. Stop when every test file has a corresponding spec."
+./ds ralph/ralph.sh plan --goal "for every test file matching tests/**/*.js in this repo, use a separate subagent to produce specs/tests/<basename>.md capturing EVERY behavior the tests assert, in language-agnostic prose, with citations tests/<path>:<line>. Describe what the tests observe and require, never how the implementation works. Stop when every test file has a corresponding spec."
 ```
 
-- `plan 5` caps at 5 iterations — a safety net so a stuck agent doesn't burn budget.
+- Plan mode runs a single iteration by default — enough to produce the spec bundle in one pass.
 - Watch progress live from a second terminal: `tail -f ralph/progress.txt`.
 - Success looks like `specs/tests/tests.md` with ~200 bullet-point behaviors, each citing a `tests/tests.js:<line>`.
 
@@ -189,12 +181,7 @@ Ralph reads every test file, fans out one subagent per file, writes one Markdown
 ## Stage 2 — Source → specs with citations (≈ 10–30 min)
 
 ```bash
-./ds plan 8 --goal \
-  "use a subagent to read punycode.js in full and produce specs/impl/punycode.md \
-   documenting public and internal behavior, invariants, data flow, and edge \
-   cases, with citations to punycode.js:<line>. The spec must be sufficient for \
-   a from-scratch reimplementation in any language — do not use JavaScript \
-   syntax in the prose. Follow the RFC 3492 structure where it maps naturally."
+./ds ralph/ralph.sh plan --goal "use a subagent to read punycode.js in full and produce specs/impl/punycode.md documenting public and internal behavior, invariants, data flow, and edge cases, with citations to punycode.js:<line>. The spec must be sufficient for a from-scratch reimplementation in any language — do not use JavaScript syntax in the prose. Follow the RFC 3492 structure where it maps naturally."
 ```
 
 **Checkpoint**: open `specs/impl/punycode.md`. It should read like the RFC 3492 algorithm description, with line citations — not like JavaScript with comments.
@@ -206,15 +193,7 @@ Ralph reads every test file, fans out one subagent per file, writes one Markdown
 Ralph turns the spec bundle into a prioritized, dependency-ordered porting plan. Every bullet is scoped to one Stage 4 build iteration.
 
 ```bash
-./ds plan 3 --goal \
-  "author ralph/todo.md as a prioritized porting plan from the specs under \
-   specs/tests/** and specs/impl/** into Go per TARGET.md. Order items by \
-   dependency: Go module scaffolding first (go.mod, package layout in port/), \
-   then primitives (ucs2 codec, digit mapping, bias adaptation), then the \
-   composite encoders/decoders (encode, decode, toASCII, toUnicode). Each \
-   bullet must be scoped to one ralph build iteration (~one commit) and must \
-   end with the test(s) from specs/tests/** that verify it. Finish when \
-   ralph/todo.md is a clean ordered list covering every behavior in the specs."
+./ds ralph/ralph.sh plan --goal "author ralph/todo.md as a prioritized porting plan from the specs under specs/tests/** and specs/impl/** into Go per TARGET.md. Order items by dependency: Go module scaffolding first (go.mod, package layout in port/), then primitives (ucs2 codec, digit mapping, bias adaptation), then the composite encoders/decoders (encode, decode, toASCII, toUnicode). Each bullet must be scoped to one ralph build iteration (~one commit) and must end with the test(s) from specs/tests/** that verify it. Finish when ralph/todo.md is a clean ordered list covering every behavior in the specs."
 ```
 
 **Checkpoint**: open `ralph/todo.md`. The top item should be scaffolding (`go.mod`, empty `port/punycode.go`, empty `port/punycode_test.go`). The last item should be the most composite function. Every item should reference a spec.
@@ -226,17 +205,17 @@ Ralph turns the spec bundle into a prioritized, dependency-ordered porting plan.
 Classic Ralph loop. Each iteration picks the top item off `ralph/todo.md`, implements it into `port/`, writes Go tests, runs `go test`, commits, pushes, and moves on.
 
 ```bash
-./ds 30
+./ds ralph/ralph.sh
 ```
 
-- `30` caps iterations — adjust for your budget and timebox.
+- Build mode runs until Ralph signals `<promise>COMPLETE</promise>` — interrupt with Ctrl+C whenever your budget or timebox is up.
 - Sonnet handles build mode (faster and cheaper than Opus per iteration).
 - Ralph auto-pushes after every commit, so your branch on GitHub grows in real time.
 
 When Ralph emits `<promise>COMPLETE</promise>`, verify yourself inside the sandbox:
 
 ```bash
-./ds shell
+./ds bash
 # inside the sandbox:
 cd port && go test ./... -v
 ```
@@ -252,17 +231,17 @@ Every RFC test vector from `specs/tests/*.md` should have a Go counterpart that 
 | `progress.txt` idle for minutes | Subagent hung or spinning | Wait — the stall watchdog (30 min default) will kill it |
 | Same todo item keeps coming back | Agent is guessing, not reading the spec | Kill the loop, open the todo + spec, tighten the spec wording |
 | `go test` fails but agent commits anyway | Build loop didn't verify | Add a "must run `go test` and show output" line to `TARGET.md`, re-run |
-| `<promise>COMPLETE</promise>` before tests pass | Agent's definition of done is weak | Re-run `./ds 10` to keep iterating |
+| `<promise>COMPLETE</promise>` before tests pass | Agent's definition of done is weak | Re-run `./ds ralph/ralph.sh` to keep iterating |
 
 ---
 
 ## Limitations & honest caveats
 
-1. **Token cost scales with participants.** Ten people × four stages × Opus planning + Sonnet building = real money. Cap iterations aggressively; a Max plan subscription absorbs most of this.
+1. **Token cost scales with participants.** Ten people × four stages × Opus planning + Sonnet building = real money. Interrupt the build loop with Ctrl+C once you've seen enough; a Max plan subscription absorbs most of this.
 2. **Rate limits on a shared account.** Plan prompts fan out up to 500 parallel subagents. Ten participants starting Stage 1 simultaneously can hit org-level request caps. Stagger stage starts by 30 seconds if needed.
 3. **Non-determinism is the point.** Two participants with the same goal produce different specs and different ports. Plan a group diff-review at the end — it's the most interesting part of the workshop.
 4. **Tests don't port 1:1.** Mocha's `describe`/`it` + array-driven vectors become Go's `testing` + table-driven subtests. The agent rewrites rather than translates; edge cases occasionally drop. Spot-check.
-5. **"Complete" is agent-declared, not verified.** Ralph signals completion when `ralph/todo.md` is empty. That doesn't mean `go test` is green. Always re-run tests manually via `./ds shell`.
+5. **"Complete" is agent-declared, not verified.** Ralph signals completion when `ralph/todo.md` is empty. That doesn't mean `go test` is green. Always re-run tests manually via `./ds bash`.
 6. **Docker image size.** The sandbox image is ~800 MB (Ubuntu + Claude Code + Go). Budget disk accordingly on participant machines.
 7. **Git push from inside the sandbox** needs your SSH key — `./ds` mounts `~/.ssh` read-only for this. Pushes to HTTPS remotes with cached credentials also work. If neither is set up, pushes fail silently and you can push manually from the host after each stage.
 8. **Source protection is soft.** Nothing *forbids* editing `punycode.js`; plan mode says "markdown only" but build mode doesn't guard source paths. If the agent rewrites the original source, `git checkout -- punycode.js`.
