@@ -9,7 +9,7 @@ You are in PLAN MODE. The ULTIMATE GOAL at the bottom of this prompt tells you *
    - Which outputs satisfy the goal and where they belong on disk.
    - The right granularity — one spec per logical unit (test file, source module, feature) is usually correct.
    - Dependencies between outputs — write primitives before composites.
-   Use up to 500 parallel Sonnet subagents for independent reads (one subagent per input file is ideal for large codebases). Use Opus subagents for synthesis when the task requires reconciling findings across files.
+   Use up to 1 Sonnet subagent for independent reads. Use Opus subagents for synthesis when the task requires reconciling findings across files.
 
 2. Default spec-writing rules (apply unless the goal overrides them):
    - One markdown file per logical unit.

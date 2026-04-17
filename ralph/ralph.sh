@@ -311,19 +311,34 @@ while true; do
     echo ""
 
     TIMEOUT_EXIT=0
-    if [ "$MODE" = "plan" ]; then
-        OUTPUT=$(run_with_stall_watchdog bash -c \
-            'sed -e "s/\[project-specific goal\]/$2/g" -e "s/\[ralph-iteration\]/$4/g" "$1/prompt-plan.md" | claude --dangerously-skip-permissions --print --model "$3" --verbose' \
-            _ "$SCRIPT_DIR" "$GOAL_TEXT" "$MODEL" "$CURRENT_ITER") || TIMEOUT_EXIT=$?
-    elif [ "$MODE" = "security" ]; then
-        OUTPUT=$(run_with_stall_watchdog bash -c \
-            'sed -e "s/\[ref-branch\]/$2/g" -e "s/\[ralph-iteration\]/$4/g" "$1/prompt-security.md" | claude --dangerously-skip-permissions --print --model "$3" --verbose' \
-            _ "$SCRIPT_DIR" "$REF_BRANCH" "$MODEL" "$CURRENT_ITER") || TIMEOUT_EXIT=$?
-    else
-        OUTPUT=$(run_with_stall_watchdog bash -c \
-            'sed "s/\[ralph-iteration\]/$3/g" "$1/prompt-build.md" | claude --dangerously-skip-permissions --print --model "$2" --verbose' \
-            _ "$SCRIPT_DIR" "$MODEL" "$CURRENT_ITER") || TIMEOUT_EXIT=$?
-    fi
+
+    # Substitute placeholders via bash parameter expansion (sed-safe: the
+    # values can contain /, &, \, newlines — all fine here). Write to a
+    # temp file so claude reads the fully rendered prompt from stdin.
+    PROMPT_CONTENT=$(cat "$PROMPT_FILE"; printf x); PROMPT_CONTENT=${PROMPT_CONTENT%x}
+    case "$MODE" in
+        plan)
+            PROMPT_CONTENT="${PROMPT_CONTENT//\[project-specific goal\]/$GOAL_TEXT}"
+            PROMPT_CONTENT="${PROMPT_CONTENT//\[ralph-iteration\]/$CURRENT_ITER}"
+            ;;
+        security)
+            PROMPT_CONTENT="${PROMPT_CONTENT//\[ref-branch\]/$REF_BRANCH}"
+            PROMPT_CONTENT="${PROMPT_CONTENT//\[ralph-iteration\]/$CURRENT_ITER}"
+            ;;
+        *)
+            PROMPT_CONTENT="${PROMPT_CONTENT//\[ralph-iteration\]/$CURRENT_ITER}"
+            ;;
+    esac
+    PROMPT_TMP=$(mktemp)
+    printf '%s' "$PROMPT_CONTENT" > "$PROMPT_TMP"
+
+    # IS_SANDBOX=1 lets claude accept --dangerously-skip-permissions when
+    # running as root (e.g. inside the Linux Docker sandbox). Harmless for
+    # non-root invocations — claude only checks the flag when getuid()==0.
+    OUTPUT=$(run_with_stall_watchdog bash -c \
+        'IS_SANDBOX=1 claude --dangerously-skip-permissions --print --model "$2" --verbose < "$1"' \
+        _ "$PROMPT_TMP" "$MODEL") || TIMEOUT_EXIT=$?
+    rm -f "$PROMPT_TMP"
 
     # Detect stall timeout: watchdog returns 124 when it killed the child for progress.txt inactivity.
     if [ "$TIMEOUT_EXIT" -eq 124 ]; then
