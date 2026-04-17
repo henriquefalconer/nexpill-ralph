@@ -29,20 +29,34 @@ Everyone in the room runs the same four stages in parallel, each on their own br
 
 ---
 
-## The `./ds` wrapper
+## The Docker sandbox, and `./ds`
 
-Every Ralph invocation runs inside a Docker sandbox via `./ds`, a tiny shell alias at the repo root. You never call `./ralph/ralph.sh` directly — you call `./ds ...` with the exact same arguments, and `ds` forwards them into the container.
+Everything happens inside a Docker sandbox — both the first `claude login` and every ralph invocation. The raw flow is:
 
-```text
-./ds plan 5 --goal "..."   # planning run inside sandbox
-./ds 30                    # build loop inside sandbox
-./ds shell                 # open a bash shell inside sandbox (for go test, debugging)
-./ds login                 # run `claude login` inside sandbox (one-time per machine)
+```bash
+# 1. Log in once (interactive device-code flow, run inside the sandbox)
+docker run --rm -it \
+  -v "$PWD:/workspace" -v "$HOME/.claude:/root/.claude" \
+  ralph-sandbox claude login
+
+# 2. Run ralph inside the same sandbox
+docker run --rm -it \
+  -v "$PWD:/workspace" -v "$HOME/.claude:/root/.claude" \
+  ralph-sandbox ./ralph/ralph.sh plan 5 --goal "..."
 ```
 
-Why: the `--dangerously-skip-permissions` flag Ralph passes to Claude Code gives the agent full filesystem access. The sandbox confines that access to the repo directory. First run of `./ds` builds the image (~2 min); every run after that is instant.
+`./ds` is a shortcut for those `docker run` invocations — nothing more. The verbs match 1:1:
 
-The script is intentionally language-agnostic — no `npm run`, no `make`, no new tool to install. Just a bash script on your PATH via `./ds`.
+```text
+./ds login              ≡  docker run … ralph-sandbox claude login
+./ds plan 5 --goal …    ≡  docker run … ralph-sandbox ./ralph/ralph.sh plan 5 --goal …
+./ds 30                 ≡  docker run … ralph-sandbox ./ralph/ralph.sh 30
+./ds shell              ≡  docker run … ralph-sandbox bash          # for go test, debugging
+```
+
+The first invocation of `./ds` builds the sandbox image (~2 min, one time). Every call after that reuses the cached image. Why sandbox at all: Ralph passes `--dangerously-skip-permissions` to Claude Code, giving the agent full filesystem access — the sandbox confines that access to the repo directory plus the mounts.
+
+The script is intentionally language-agnostic — no `npm run`, no `make`, no new tool to install.
 
 ---
 
