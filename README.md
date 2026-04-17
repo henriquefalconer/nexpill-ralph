@@ -111,7 +111,15 @@ nexpill-ralph/
 ├── ds                   # sandboxed ralph wrapper (builds its own image)
 ├── punycode.js          # vendored source
 ├── tests/tests.js       # vendored tests
+├── scripts/             # vendored (npm publish tooling — not relevant to port)
+├── package.json         # vendored npm metadata
 ├── LICENSE-MIT.txt      # vendored license (MIT)
+├── SOURCE-README.md     # punycode.js's original README
+├── .editorconfig        # vendored
+├── .gitattributes       # vendored
+├── .gitignore           # vendored
+├── .github/             # vendored (source repo's CI, ignore)
+├── .nvmrc               # vendored
 ├── TARGET.md            # port target spec
 └── README.md            # this file
 ```
