@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# ds — run ralph inside a Docker sandbox.
+# First invocation builds the image; subsequent runs reuse it.
+# Usage: ./ds [plan|security] [max_iter] [--goal "..."] [--ref-branch ...]
+#        ./ds shell          # open an interactive shell in the sandbox
+#        ./ds login          # run `claude login` in the sandbox (once)
+
+set -euo pipefail
+
+IMAGE=ralph-sandbox:latest
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+
+if ! command -v docker >/dev/null 2>&1; then
+    echo "docker not found — install Docker first (see README Setup section)." >&2
+    exit 1
+fi
+
+if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
+    echo "First run — building sandbox image (one-time, ~2 min)..." >&2
+    docker build -t "$IMAGE" "$ROOT"
+fi
+
+mounts=(-v "$ROOT":/workspace)
+[ -d "$HOME/.claude"    ] && mounts+=(-v "$HOME/.claude":/root/.claude)
+[ -d "$HOME/.ssh"       ] && mounts+=(-v "$HOME/.ssh":/root/.ssh:ro)
+[ -f "$HOME/.gitconfig" ] && mounts+=(-v "$HOME/.gitconfig":/root/.gitconfig:ro)
+
+case "${1:-}" in
+    shell) shift; exec docker run --rm -it "${mounts[@]}" -w /workspace "$IMAGE" bash "$@" ;;
+    login) shift; exec docker run --rm -it "${mounts[@]}" -w /workspace "$IMAGE" claude login "$@" ;;
+    *)     exec docker run --rm -it "${mounts[@]}" -w /workspace "$IMAGE" ./ralph/ralph.sh "$@" ;;
+esac
