@@ -69,24 +69,41 @@ You only need **Docker** and **git** on the host. Everything else — Claude Cod
 ### macOS
 
 ```bash
-brew install --cask docker   # Docker Desktop
-open -a Docker               # launch it; wait for the whale icon to stop animating
+# Install
+brew install --cask docker
+open -a Docker   # launch; wait for the whale icon to stop animating
+
+# Update later
+brew upgrade --cask docker
 ```
 
-### Linux
+### Linux (Debian/Ubuntu)
 
 ```bash
+# Install — the script adds Docker's official apt repo, then installs docker-ce
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker "$USER"
-newgrp docker                # or: log out and back in
+newgrp docker   # or log out and back in
+
+# Update later
+sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli
 ```
 
-### Windows (WSL2 already installed)
+### Windows (WSL2, pure CLI)
 
-1. Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/).
-2. Docker Desktop → **Settings → Resources → WSL integration** → toggle on your WSL distro.
-3. Restart Docker Desktop.
-4. From here on, use your **WSL2 shell** (Ubuntu recommended) for everything.
+Run these **inside your WSL shell** (Ubuntu recommended) — Windows proper is not involved. Commands are identical to Linux:
+
+```bash
+# Install
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker "$USER"
+newgrp docker
+
+# Update later
+sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli
+```
+
+If `docker run` reports the daemon isn't running (WSL2 without systemd), start it with `sudo service docker start`.
 
 ### Verify
 
