@@ -1,0 +1,362 @@
+#!/bin/bash
+# Ralph Wiggum - Long-running AI agent loop
+# Usage: ./ralph.sh [plan|security|build] [max_iterations] [--goal <text>] [--ref-branch <branch>]
+#
+# Examples:
+#   ./ralph.sh                                # Build mode, unlimited
+#   ./ralph.sh 20                             # Build mode, max 20
+#   ./ralph.sh plan 3                         # Plan mode, max 3 iters
+#   ./ralph.sh plan 3 --goal "feature"        # Plan mode, max 3 iters, custom goal
+#   ./ralph.sh plan                           # Plan mode, interactive goal prompt
+#   ./ralph.sh security --ref-branch develop    # Security mode, unlimited iters
+#   ./ralph.sh security 2 --ref-branch develop  # Security mode, max 2 iters
+
+set -euo pipefail
+
+# ANSI escape codes usage: only applied before the `# Select model` block below.
+GREEN_BOLD="\033[1;38;2;40;254;20m"
+YELLOW_BOLD="\033[1;33m"
+RED_BOLD="\033[1;31m"
+RESET="\033[0m"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT=$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)
+TODO_FILE="$SCRIPT_DIR/todo.md"
+PROGRESS_FILE="$SCRIPT_DIR/progress.txt"
+ARCHIVE_DIR="$SCRIPT_DIR/archive"
+LAST_BRANCH_FILE="$SCRIPT_DIR/.last-branch"
+
+ITERATION_TIMEOUT="${ITERATION_TIMEOUT:-1800}"  # 30min of ralph/progress.txt idle time (override via env)
+WATCHDOG_POLL_INTERVAL="${WATCHDOG_POLL_INTERVAL:-5}"  # how often the stall watchdog checks mtime
+TAIL_PID=""
+
+cleanup() {
+  [ -n "${TAIL_PID:-}" ] && kill "$TAIL_PID" 2>/dev/null || true
+}
+trap 'cleanup' EXIT
+trap 'echo "Received interrupt, cleaning up..."; exit 130' INT
+trap 'echo "Received termination signal, cleaning up..."; exit 143' TERM
+
+# Run "$@" in the background, capturing its stdout+stderr. Kill it if
+# $PROGRESS_FILE goes unmodified for $ITERATION_TIMEOUT seconds (stall).
+# Prints captured output on stdout (so callers can `OUTPUT=$(...)`); also
+# tees live to stderr so the user sees progress.
+# Returns: 124 if killed for stall, else the command's own exit code.
+run_with_stall_watchdog() {
+    local outfile stall_sentinel cmd_pid watchdog_pid tail_pid cmd_exit=0
+    outfile=$(mktemp)
+    stall_sentinel=$(mktemp -u)
+
+    "$@" > "$outfile" 2>&1 &
+    cmd_pid=$!
+
+    tail -n +1 -f --pid="$cmd_pid" "$outfile" >&2 &
+    tail_pid=$!
+
+    (
+        baseline=$(date +%s)
+        while kill -0 "$cmd_pid" 2>/dev/null; do
+            sleep "$WATCHDOG_POLL_INTERVAL"
+            now=$(date +%s)
+            mtime=$(stat -c %Y "$PROGRESS_FILE" 2>/dev/null || echo "$baseline")
+            last=$(( mtime > baseline ? mtime : baseline ))
+            if (( now - last >= ITERATION_TIMEOUT )); then
+                touch "$stall_sentinel"
+                kill -TERM "$cmd_pid" 2>/dev/null || true
+                sleep 2
+                kill -KILL "$cmd_pid" 2>/dev/null || true
+                break
+            fi
+        done
+    ) &
+    watchdog_pid=$!
+
+    wait "$cmd_pid" 2>/dev/null || cmd_exit=$?
+    kill "$watchdog_pid" 2>/dev/null || true
+    wait "$watchdog_pid" 2>/dev/null || true
+    wait "$tail_pid" 2>/dev/null || true
+
+    cat "$outfile"
+    rm -f "$outfile"
+
+    if [ -f "$stall_sentinel" ]; then
+        rm -f "$stall_sentinel"
+        return 124
+    fi
+    return "$cmd_exit"
+}
+
+# When sourced with RALPH_SOURCE_ONLY=1, stop before main logic so tests can
+# exercise run_with_stall_watchdog in isolation.
+if [ "${RALPH_SOURCE_ONLY:-}" = "1" ] && [ "${BASH_SOURCE[0]}" != "${0}" ]; then
+    return 0
+fi
+
+# ────────────────────────────────────────────────
+# Parse flags & positional arguments
+# ────────────────────────────────────────────────
+
+GOAL_TEXT=""
+REF_BRANCH=""
+POSITIONAL=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --goal|--project-goal|-g|--project_specific_goal)
+            shift
+            [[ $# -eq 0 ]] && { echo -e "${RED_BOLD}Error: --goal requires a value${RESET}"; exit 1; }
+            GOAL_TEXT="$1"
+            shift
+            ;;
+        --ref-branch)
+            shift
+            [[ $# -eq 0 ]] && { echo -e "${RED_BOLD}Error: --ref-branch requires a value${RESET}"; exit 1; }
+            REF_BRANCH="$1"
+            shift
+            ;;
+        *)
+            POSITIONAL+=("$1")
+            shift
+            ;;
+    esac
+done
+
+set -- "${POSITIONAL[@]:-}"
+
+# ────────────────────────────────────────────────
+# Mode, iterations, prompt file
+# ────────────────────────────────────────────────
+
+if [ "${1:-}" = "plan" ]; then
+    MODE="plan"
+    shift
+    MAX_ITERATIONS="${1:-0}"
+    [[ "$MAX_ITERATIONS" =~ ^[0-9]+$ ]] && shift || MAX_ITERATIONS=0
+elif [ "${1:-}" = "security" ]; then
+    MODE="security"
+    shift
+    MAX_ITERATIONS="${1:-0}"
+    [[ "$MAX_ITERATIONS" =~ ^[0-9]+$ ]] && shift || MAX_ITERATIONS=0
+elif [[ "${1:-}" =~ ^[0-9]+$ ]]; then
+    MODE="build"
+    MAX_ITERATIONS="$1"
+    shift
+else
+    MODE="build"
+    MAX_ITERATIONS=0
+fi
+
+# Legacy positional goal
+if [ -z "$GOAL_TEXT" ] && [ $# -ge 1 ] && [ -n "${1:-}" ]; then
+    GOAL_TEXT="$1"
+    shift || true
+fi
+
+# Interactive goal editor (plan mode only, when missing)
+if [ "$MODE" = "plan" ] && [ -z "$GOAL_TEXT" ]; then
+    GOAL_TEXT=""
+    cursor_pos=${#GOAL_TEXT}
+    old_stty=$(stty -g 2>/dev/null)
+    stty -icanon -echo min 1 time 0 2>/dev/null
+    printf '\033[?25l'
+    trap '
+        stty "$old_stty" 2>/dev/null
+        printf "\033[?25h"
+        exit 1
+    ' INT TERM EXIT
+
+    while true; do
+        clear 2>/dev/null || printf '\033[H\033[2J'
+        printf "${GREEN_BOLD}Type your goal - Enter to select project-specific goal for the agent to cycle planning${RESET}\n\n"
+        printf "\rAs our next objective, we want to achieve ${GREEN_BOLD}%s_${RESET}" "${GOAL_TEXT:0:$cursor_pos}"
+        if [ $cursor_pos -lt ${#GOAL_TEXT} ]; then
+            printf "${YELLOW_BOLD}%s_${RESET}" "${GOAL_TEXT:cursor_pos:1}"
+        fi
+        printf "\n\n${YELLOW_BOLD}Examples:${RESET}\n"
+        printf "  • repo with full spec implementation\n"
+        printf "  • a detailed analytics system based on specs/analytics.md\n"
+        printf "  • a great working ui and ux\n"
+        printf "  • an AI-powered data import system based on specs/data-import.md\n\n"
+        IFS= read -r -n 1 -d '' c 2>/dev/null
+        case "$c" in
+            "" | $'\n') break ;;
+            $'\177' | $'\b')
+                if [ $cursor_pos -gt 0 ]; then
+                    GOAL_TEXT="${GOAL_TEXT:0:$((cursor_pos-1))}${GOAL_TEXT:$cursor_pos}"
+                    cursor_pos=$((cursor_pos-1))
+                fi
+                ;;
+            $'\003') break ;;
+            [[:print:]])
+                GOAL_TEXT="${GOAL_TEXT:0:$cursor_pos}${c}${GOAL_TEXT:$cursor_pos}"
+                cursor_pos=$((cursor_pos+1))
+                ;;
+            *) ;;
+        esac
+    done
+
+    stty "$old_stty" 2>/dev/null
+    printf '\033[?25h'
+    trap 'cleanup' EXIT
+    trap 'echo "Received interrupt, cleaning up..."; exit 130' INT
+    trap 'echo "Received termination signal, cleaning up..."; exit 143' TERM
+
+    GOAL_TEXT=$(echo "$GOAL_TEXT" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+
+    if [ -z "$GOAL_TEXT" ]; then
+        echo -e "\nEmpty goal → exiting."
+        exit 1
+    fi
+
+    clear 2>/dev/null || printf '\033[H\033[2J'
+    echo -e "${GREEN_BOLD}Confirm goal${RESET}"
+    echo -e "────────────────────────────────────────────────────────────────────"
+    echo -e "As our next objective, we want to achieve ${GREEN_BOLD}${GOAL_TEXT}${RESET}."
+    echo -e "────────────────────────────────────────────────────────────────────\n"
+    echo -en "${GREEN_BOLD}Good? [Y/n] ${RESET}"
+    read -n 1 -r confirm 2>/dev/null
+    echo
+    if [[ -n "$confirm" && ! "$confirm" =~ ^[Yy]$ ]]; then
+        echo -e "Cancelled."
+        exit 1
+    fi
+fi
+
+# Security mode requires --ref-branch
+if [ "$MODE" = "security" ]; then
+    REF_BRANCH="${REF_BRANCH:?Usage: ./ralph.sh security [max_iterations] --ref-branch <branch>}"
+fi
+
+# Validate prompt file
+PROMPT_FILE="$SCRIPT_DIR/prompt-${MODE}.md"
+if [ ! -f "$PROMPT_FILE" ]; then
+    echo -e "${RED_BOLD}Error: $PROMPT_FILE not found${RESET}"
+    exit 1
+fi
+
+# Select model
+if [ "$MODE" = "build" ]; then
+    MODEL="sonnet"
+else
+    MODEL="opus"
+fi
+
+CURRENT_BRANCH=$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD)
+
+# ────────────────────────────────────────────────
+# Archive previous run if branch changed
+# ────────────────────────────────────────────────
+
+if [ -f "$LAST_BRANCH_FILE" ]; then
+  LAST_BRANCH=$(cat "$LAST_BRANCH_FILE" 2>/dev/null || echo "")
+  if [ -n "$LAST_BRANCH" ] && [ "$CURRENT_BRANCH" != "$LAST_BRANCH" ]; then
+    DATE=$(date +%Y-%m-%d)
+    FOLDER_NAME=$(echo "$LAST_BRANCH" | sed 's|^ralph/||' | tr '/' '-')
+    ARCHIVE_FOLDER="$ARCHIVE_DIR/$DATE-$FOLDER_NAME"
+
+    echo "Archiving previous run: $LAST_BRANCH"
+    mkdir -p "$ARCHIVE_FOLDER"
+    [ -f "$TODO_FILE" ] && cp "$TODO_FILE" "$ARCHIVE_FOLDER/"
+    [ -f "$PROGRESS_FILE" ] && cp "$PROGRESS_FILE" "$ARCHIVE_FOLDER/"
+    echo "   Archived to: $ARCHIVE_FOLDER"
+  fi
+fi
+
+echo "$CURRENT_BRANCH" > "$LAST_BRANCH_FILE"
+
+# ────────────────────────────────────────────────
+# Reset progress file and start tailing (sync stdout)
+# ────────────────────────────────────────────────
+
+: > "$PROGRESS_FILE"
+tail -f "$PROGRESS_FILE" &
+TAIL_PID=$!
+
+# ────────────────────────────────────────────────
+# Header
+# ────────────────────────────────────────────────
+
+if [ "$MAX_ITERATIONS" -gt 0 ]; then
+    echo "Launching Ralph - Branch: $CURRENT_BRANCH - Max iterations: $MAX_ITERATIONS"
+else
+    echo "Launching Ralph - Branch: $CURRENT_BRANCH - Max iterations: unlimited"
+fi
+
+# ────────────────────────────────────────────────
+# Main loop
+# ────────────────────────────────────────────────
+
+ITERATION=0
+
+while true; do
+    if [ "$MAX_ITERATIONS" -gt 0 ] && [ "$ITERATION" -ge "$MAX_ITERATIONS" ]; then
+        echo ""
+        echo "Ralph reached max iterations ($MAX_ITERATIONS) without completing."
+        sleep 1
+        cleanup
+        trap - EXIT
+        exit 1
+    fi
+
+    CURRENT_ITER=$((ITERATION + 1))
+    START_TIME=$(date +%s)
+    if [ "$MAX_ITERATIONS" -gt 0 ]; then
+        ITER_LABEL="$CURRENT_ITER of $MAX_ITERATIONS"
+    else
+        ITER_LABEL="$CURRENT_ITER"
+    fi
+
+    echo ""
+    echo "Launched Ralph. Await for messages."
+    echo ""
+
+    TIMEOUT_EXIT=0
+    if [ "$MODE" = "plan" ]; then
+        OUTPUT=$(run_with_stall_watchdog bash -c \
+            'sed -e "s/\[project-specific goal\]/$2/g" -e "s/\[ralph-iteration\]/$4/g" "$1/prompt-plan.md" | claude --dangerously-skip-permissions --print --model "$3" --verbose' \
+            _ "$SCRIPT_DIR" "$GOAL_TEXT" "$MODEL" "$CURRENT_ITER") || TIMEOUT_EXIT=$?
+    elif [ "$MODE" = "security" ]; then
+        OUTPUT=$(run_with_stall_watchdog bash -c \
+            'sed -e "s/\[ref-branch\]/$2/g" -e "s/\[ralph-iteration\]/$4/g" "$1/prompt-security.md" | claude --dangerously-skip-permissions --print --model "$3" --verbose' \
+            _ "$SCRIPT_DIR" "$REF_BRANCH" "$MODEL" "$CURRENT_ITER") || TIMEOUT_EXIT=$?
+    else
+        OUTPUT=$(run_with_stall_watchdog bash -c \
+            'sed "s/\[ralph-iteration\]/$3/g" "$1/prompt-build.md" | claude --dangerously-skip-permissions --print --model "$2" --verbose' \
+            _ "$SCRIPT_DIR" "$MODEL" "$CURRENT_ITER") || TIMEOUT_EXIT=$?
+    fi
+
+    # Detect stall timeout: watchdog returns 124 when it killed the child for progress.txt inactivity.
+    if [ "$TIMEOUT_EXIT" -eq 124 ]; then
+        echo ""
+        echo "Ralph iteration $CURRENT_ITER timed out after ralph/progress.txt updates idle for ${ITERATION_TIMEOUT}s."
+        echo "Check $PROGRESS_FILE for status."
+        exit 1
+    fi
+
+    # Check for a promise signal (NEXT or COMPLETE).
+    if ! echo "$OUTPUT" | grep -qE "<promise>(NEXT|COMPLETE)</promise>"; then
+        echo ""
+        echo "Ralph finished without completing all tasks."
+        echo "Check $PROGRESS_FILE for status."
+        exit 1
+    fi
+
+    # Push changes after each iteration (non-fatal if it fails)
+    git -C "$REPO_ROOT" push origin "$CURRENT_BRANCH" 2>/dev/null || \
+        git -C "$REPO_ROOT" push -u origin "$CURRENT_BRANCH" 2>/dev/null || true
+
+    # Completion check: <promise>COMPLETE</promise> ends the loop.
+    if echo "$OUTPUT" | grep -q "<promise>COMPLETE</promise>"; then
+        echo ""
+        echo "Ralph signaled completion at iteration $CURRENT_ITER."
+        sleep 1
+        cleanup
+        trap - EXIT
+        exit 0
+    fi
+
+    ITERATION=$((ITERATION + 1))
+    echo ""
+    echo "Iteration $CURRENT_ITER complete. Continuing..."
+    sleep 2
+done
