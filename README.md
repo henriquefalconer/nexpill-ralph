@@ -68,22 +68,20 @@ gh auth login        # one-time; pick GitHub.com, then HTTPS or SSH
 
 `./ds` auto-detects `sbx` and uses it in place of `docker sandbox`.
 
-### Windows (WSL2)
+### Windows
 
-Install **Docker Desktop for Windows 4.50+** on Windows proper (native ARM64 and amd64 builds are available). It bundles `docker sandbox`, and WSL2 integration exposes it to every WSL shell — which sidesteps the "no arm64 `.deb`" problem, since the sandbox VM runs via Hyper-V on Windows, not inside WSL.
+The `./ds` script is bash, so you'll want a **bash-compatible terminal** to run it from — Git Bash (bundled with Git for Windows) is the easiest option; MSYS2, Cygwin, or similar also work.
 
-1. Download and install Docker Desktop: <https://www.docker.com/products/docker-desktop/>
-2. Launch Docker Desktop → **Settings → Resources → WSL integration** → enable for your distro (Ubuntu recommended).
-3. In your WSL shell, install `gh` for the fork step:
+1. **Docker Desktop for Windows 4.50+** (native ARM64 and amd64 builds) — <https://www.docker.com/products/docker-desktop/>. Bundles `docker sandbox`, runs the sandbox VM via Hyper-V.
+2. **A bash-compatible terminal** — Git for Windows (Git Bash recommended) from <https://git-scm.com/download/win>; accept the installer defaults.
+3. **GitHub CLI (`gh`)** — `winget install --id GitHub.cli` (or download from <https://cli.github.com>).
+
+Open your bash-compatible terminal and authenticate:
 
 ```bash
-sudo apt-get update && sudo apt-get install -y gh
 gh auth login        # one-time; pick GitHub.com, then HTTPS or SSH
+docker sandbox --help  # sanity check — should list subcommands
 ```
-
-Verify from WSL: `docker sandbox --help` should print the subcommand list.
-
-> Do **not** run `get.docker.com` inside WSL — it installs the Linux Docker Engine, which has no sandbox support. The `docker` command in WSL should come from Docker Desktop's WSL integration, not from a standalone `docker-ce` install.
 
 ---
 
