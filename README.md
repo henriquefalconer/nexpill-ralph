@@ -55,33 +55,18 @@ gh auth login        # one-time; pick GitHub.com, then HTTPS or SSH
 brew upgrade --cask docker && brew upgrade gh
 ```
 
-### Linux (Ubuntu/Debian)
+### Linux (Ubuntu 26.04)
 
-Docker Desktop for Linux does **not** yet ship the sandbox feature, and plain `docker-ce` from `get.docker.com` doesn't provide it either. Install the standalone **`docker-sbx`** CLI instead — `./ds` auto-detects it and uses `sbx exec` in place of `docker sandbox exec`. Also install the GitHub CLI for the fork step.
-
-Docker publishes prebuilt `.deb` packages for Ubuntu 24.04, 25.10, and 26.04 at <https://github.com/docker/sbx-releases/releases/latest> (amd64 only). Pick the one that matches your release:
+Docker Desktop for Linux doesn't ship `docker sandbox` yet, so Linux uses the standalone `sbx` CLI — and the clean apt path only works on **Ubuntu 26.04** (or Rocky Linux 8). Earlier Ubuntu releases aren't in Docker's apt repo; upgrade to 26.04 or use a different machine.
 
 ```bash
-# Install — direct .deb for docker-sbx (auto-detects your Ubuntu release)
-UB_TAG="ubuntu$(. /etc/os-release && echo "${VERSION_ID//./}")"   # e.g. ubuntu2404
-case "$UB_TAG" in ubuntu2404|ubuntu2510|ubuntu2604) ;; *)
-  echo "docker-sbx has no prebuilt .deb for $UB_TAG (supported: 24.04, 25.10, 26.04)."; exit 1 ;;
-esac
-curl -LO "https://github.com/docker/sbx-releases/releases/latest/download/DockerSandboxes-linux-amd64-${UB_TAG}.deb"
-sudo apt-get update
-sudo apt-get install -y "./DockerSandboxes-linux-amd64-${UB_TAG}.deb" gh
+curl -fsSL https://get.docker.com | sudo REPO_ONLY=1 sh
+sudo apt-get install -y docker-sbx gh
 sbx login            # one-time, opens a browser OAuth flow
 gh auth login        # one-time; pick GitHub.com, then HTTPS or SSH
-
-# Update later — re-download the latest .deb and reinstall
-curl -LO "https://github.com/docker/sbx-releases/releases/latest/download/DockerSandboxes-linux-amd64-${UB_TAG}.deb"
-sudo apt-get install -y "./DockerSandboxes-linux-amd64-${UB_TAG}.deb"
-sudo apt-get upgrade -y gh
 ```
 
-No Docker daemon or `docker-ce` install is required — `sbx` manages its own microVM. If your distro's apt repo doesn't carry `gh`, see <https://github.com/cli/cli/blob/trunk/docs/install_linux.md> for the GitHub-hosted apt source.
-
-> **Alternative (Ubuntu 26.04 / Rocky 8 only):** Docker also serves `docker-sbx` through the same apt repo as `docker-ce`. If you're on 26.04, this one-liner works: `curl -fsSL https://get.docker.com | sudo REPO_ONLY=1 sh && sudo apt-get install -y docker-sbx`. On 24.04 and 25.10 the package is **not** in that repo — you'll see `E: Unable to locate package docker-sbx`. Use the `.deb` download above.
+`./ds` auto-detects `sbx` and uses it in place of `docker sandbox`.
 
 ### Windows (WSL2)
 
@@ -118,7 +103,17 @@ git remote -v
 # origin    git@github.com:<your-user>/nexpill-ralph.git (fetch/push)
 # upstream  https://github.com/henriquefalconer/nexpill-ralph.git (fetch/push)
 
-# 2. Authenticate git inside the sandbox so Ralph's auto-push works end-to-end.
+# 2. Create the sandbox and log into Claude Code.
+#    Running ./ds with no arguments invokes `docker sandbox run claude .` on the repo,
+#    which builds the sandbox image (~2 min, one time) and drops you into an interactive
+#    claude session.
+./ds
+# → claude starts interactively. Pick "Log in with your Anthropic account"
+#   (the subscription flow), complete OAuth in the browser, then exit claude
+#   with Ctrl+C twice. Credentials land in the sandbox and persist for every
+#   subsequent `./ds <cmd>` call.
+
+# 3. Authenticate git inside the sandbox so Ralph's auto-push works end-to-end.
 #    First, create a fine-grained Personal Access Token scoped to ONLY your fork:
 #
 #      → https://github.com/settings/tokens?type=beta
@@ -129,21 +124,17 @@ git remote -v
 #                                  (Metadata → Read-only auto-selects; required)
 #        • Generate token, copy it once (you won't see it again)
 #
-#    Now cache it inside the sandbox (this builds the image on first run):
-./ds bash -c "git config --global credential.helper store && git ls-remote origin >/dev/null"
+#    Now cache it inside the sandbox (two calls — configure the helper, then
+#    run one authenticated operation that triggers the prompt):
+./ds git config --global credential.helper store
+./ds git ls-remote origin
 #    Username for 'https://github.com': <your-user>
 #    Password for 'https://<your-user>@github.com': <paste the PAT — input is hidden>
 #    Credentials land in the sandbox's ~/.git-credentials and persist across ./ds calls.
 
-# 3. Personal branch — everyone runs in parallel, nobody shares a branch
+# 4. Personal branch — everyone runs in parallel, nobody shares a branch
 git checkout -b workshop/<your-name>
 git push -u origin workshop/<your-name>
-
-# 4. Log into Claude Code inside the sandbox
-./ds claude
-# → claude starts interactively. Pick "Log in with your Anthropic account"
-#   (the subscription flow), complete OAuth in the browser, then exit claude
-#   with Ctrl+C twice. Credentials land in your host ~/.claude and persist.
 ```
 
 Ralph's auto-push runs against whatever branch you're on when you invoke `./ds`, so Stages 1–4 land on `workshop/<your-name>`. At the end you can `git diff main..workshop/<your-name>` to see exactly what Ralph produced.
@@ -176,10 +167,10 @@ Everything happens inside a Docker sandbox — both the first `claude` to login 
 `./ds` is a thin pass-through for `docker sandbox exec` — it runs whatever you hand it inside the project's sandbox, from the repo root. No built-in verbs, no ralph-specific knowledge:
 
 ```text
-./ds claude                    ≡  docker sandbox exec … claude      # interactive login
+./ds                           ≡  docker sandbox run  claude .        # create/open sandbox + interactive claude
 ./ds ./ralph/ralph.sh plan --goal …  ≡  docker sandbox exec … ./ralph/ralph.sh plan --goal …
 ./ds ./ralph/ralph.sh             ≡  docker sandbox exec … ./ralph/ralph.sh
-./ds bash                      ≡  docker sandbox exec … bash          # for go test, debugging
+./ds go test ./port/...        ≡  docker sandbox exec … go test ./port/...   # any command works
 ```
 
 The first invocation of `./ds` builds the sandbox image (~2 min, one time). Every call after that reuses the cached image. Why sandbox at all: Ralph passes `--dangerously-skip-permissions` to Claude Code, giving the agent full filesystem access — the sandbox confines that access to the repo directory plus the mounts.
@@ -238,12 +229,10 @@ Classic Ralph loop. Each iteration picks the top item off `ralph/todo.md`, imple
 - Sonnet handles build mode (faster and cheaper than Opus per iteration).
 - Ralph auto-pushes after every commit, so your branch on GitHub grows in real time.
 
-When Ralph emits `<promise>COMPLETE</promise>`, verify yourself inside the sandbox:
+When Ralph emits `<promise>COMPLETE</promise>`, run the Go test suite yourself from the host:
 
 ```bash
-./ds bash
-# inside the sandbox:
-cd port && go test ./... -v
+./ds go test ./port/... -v
 ```
 
 Every RFC test vector from `specs/tests/*.md` should have a Go counterpart that passes.
@@ -267,7 +256,7 @@ Every RFC test vector from `specs/tests/*.md` should have a Go counterpart that 
 2. **Rate limits on a shared account.** Plan prompts fan out many parallel subagents. Ten participants starting Stage 1 simultaneously can hit org-level request caps. Stagger stage starts by 30 seconds if needed.
 3. **Non-determinism is the point.** Two participants with the same goal produce different specs and different ports. Plan a group diff-review at the end — it's the most interesting part of the workshop.
 4. **Tests don't port 1:1.** Mocha's `describe`/`it` + array-driven vectors become Go's `testing` + table-driven subtests. The agent rewrites rather than translates; edge cases occasionally drop. Spot-check.
-5. **"Complete" is agent-declared, not verified.** Ralph signals completion when `ralph/todo.md` is empty. That doesn't mean `go test` is green. Always re-run tests manually via `./ds bash`.
+5. **"Complete" is agent-declared, not verified.** Ralph signals completion when `ralph/todo.md` is empty. That doesn't mean `go test` is green. Always re-run tests manually via `./ds go test ./port/...`.
 6. **Docker image size.** The sandbox image is ~800 MB (Ubuntu + Claude Code + Go). Budget disk accordingly on participant machines.
 7. **Git push from inside the sandbox** needs credentials. The Stage 0 PAT step caches HTTPS creds in the sandbox's `~/.git-credentials`; alternatively, `./ds` mounts `~/.ssh` read-only so an SSH remote works too. If neither is set up, pushes fail silently and you can push manually from the host after each stage.
 8. **Source protection is soft.** Nothing *forbids* editing `punycode.js`; plan mode says "markdown only" but build mode doesn't guard source paths. If the agent rewrites the original source, `git checkout -- punycode.js`.

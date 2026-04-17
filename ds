@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # ds — run a command inside the project's sandbox.
-# Usage: ./ds <cmd> [args...]
+# Usage:
+#   ./ds               # create/open the sandbox with the claude agent in the repo root
+#   ./ds <cmd> [args]  # exec a command inside the already-running sandbox
 #
 # Prefers `docker sandbox` (Docker Desktop 4.50+, macOS/Windows). Falls back to
 # the standalone `sbx` CLI (`docker-sbx` package, Linux) which exposes the same
-# exec subcommand.
+# run/exec subcommands.
 
 set -euo pipefail
 
@@ -22,6 +24,13 @@ else
     echo "  Linux:         install 'docker-sbx' (provides 'sbx')." >&2
     echo "See the README Setup section." >&2
     exit 1
+fi
+
+# No arguments → create/open the sandbox with the claude agent in this directory.
+# First run builds the image; subsequent runs attach to the existing sandbox.
+if [ $# -eq 0 ]; then
+    printf "Opening %s sandbox with claude agent (via %s run):\n\n" "$SANDBOX_NAME" "${SANDBOX_CMD[*]}"
+    exec "${SANDBOX_CMD[@]}" run claude "$ROOT"
 fi
 
 QUOTED_ROOT=$(printf '%q' "$ROOT")
