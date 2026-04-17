@@ -114,7 +114,7 @@ Claude starts interactively. Pick **"Log in with your Anthropic account"** (the 
 Ralph's auto-push needs cached credentials inside the sandbox. First, create a fine-grained Personal Access Token scoped to **only your fork**:
 
 - Go to <https://github.com/settings/tokens?type=beta>
-- **Token name:** anything (e.g. `nexpill-ralph`)
+- **Token name:** anything (e.g. `ds-nexpill-ralph`)
 - **Expiration:** whatever fits your workshop timebox
 - **Repository access:** "Only select repositories" → pick `<your-user>/nexpill-ralph`
 - **Repository permissions:** Contents → Read and write (Metadata → Read-only auto-selects; required)
@@ -123,6 +123,7 @@ Ralph's auto-push needs cached credentials inside the sandbox. First, create a f
 Now cache it inside the sandbox. The first `git push` triggers the username/password prompt; paste the PAT as the password.
 
 ```bash
+./ds git pull
 ./ds git push
 # Username for 'https://github.com': <your-user>
 # Password for 'https://<your-user>@github.com': <paste the PAT — input is hidden>
