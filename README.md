@@ -77,16 +77,18 @@ open -a Docker   # launch; wait for the whale icon to stop animating
 brew upgrade --cask docker
 ```
 
-### Linux (Debian/Ubuntu)
+### Linux (Debian/Ubuntu/Fedora/RHEL/CentOS/SLES/Raspberry Pi OS)
 
 ```bash
-# Install — the script adds Docker's official apt repo, then installs docker-ce
-curl -fsSL https://get.docker.com | sh
+# Install — the script adds Docker's official package repo, then installs docker-ce
+curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
 sudo usermod -aG docker "$USER"
 newgrp docker   # or log out and back in
 
-# Update later
+# Update later (Debian/Ubuntu)
 sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli
+# Update later (Fedora/RHEL/CentOS)
+sudo dnf upgrade -y docker-ce docker-ce-cli
 ```
 
 ### Windows (WSL2, pure CLI)
@@ -95,7 +97,7 @@ Run these **inside your WSL shell** (Ubuntu recommended) — Windows proper is n
 
 ```bash
 # Install
-curl -fsSL https://get.docker.com | sh
+curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
 sudo usermod -aG docker "$USER"
 newgrp docker
 
@@ -104,6 +106,8 @@ sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli
 ```
 
 If `docker run` reports the daemon isn't running (WSL2 without systemd), start it with `sudo service docker start`.
+
+> macOS and Windows (native) cannot use `get.docker.com` — it's Linux-only. Those platforms go through Docker Desktop (macOS section above, or Docker Desktop for Windows with WSL integration if you prefer a GUI).
 
 ### Verify
 
