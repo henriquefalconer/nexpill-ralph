@@ -1,22 +1,32 @@
 #!/usr/bin/env bash
-# ds — run a command inside the project's Docker sandbox.
+# ds — run a command inside the project's sandbox.
 # Usage: ./ds <cmd> [args...]
+#
+# Prefers `docker sandbox` (Docker Desktop 4.50+, macOS/Windows). Falls back to
+# the standalone `sbx` CLI (`docker-sbx` package, Linux) which exposes the same
+# exec subcommand.
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd -P)"
 SANDBOX_NAME="claude-$(basename -- "$ROOT")"
 
-if ! command -v docker >/dev/null 2>&1; then
-    echo "docker not found — install Docker first (see README Setup section)." >&2
+# Pick the sandbox driver: Docker Desktop's built-in command, else standalone sbx.
+if command -v docker >/dev/null 2>&1 && docker sandbox --help >/dev/null 2>&1; then
+    SANDBOX_CMD=(docker sandbox)
+elif command -v sbx >/dev/null 2>&1; then
+    SANDBOX_CMD=(sbx)
+else
+    echo "No sandbox driver found." >&2
+    echo "  macOS/Windows: install Docker Desktop 4.50+ (provides 'docker sandbox')." >&2
+    echo "  Linux:         install 'docker-sbx' (provides 'sbx')." >&2
+    echo "See the README Setup section." >&2
     exit 1
 fi
 
 QUOTED_ROOT=$(printf '%q' "$ROOT")
 QUOTED_CMD=$(printf '%q ' "$@")
 
-# Print exactly what will run
-printf "Running $* in $SANDBOX_NAME sandbox:\n"
-printf '\n'
+printf "Running %s in %s sandbox (via %s):\n\n" "$*" "$SANDBOX_NAME" "${SANDBOX_CMD[*]}"
 
-exec docker sandbox exec -it "$SANDBOX_NAME" sh -c "cd $QUOTED_ROOT && $QUOTED_CMD"
+exec "${SANDBOX_CMD[@]}" exec -it "$SANDBOX_NAME" sh -c "cd $QUOTED_ROOT && $QUOTED_CMD"

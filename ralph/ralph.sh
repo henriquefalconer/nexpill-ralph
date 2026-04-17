@@ -1,6 +1,6 @@
 #!/bin/bash
 # Ralph Wiggum - Long-running AI agent loop
-# Usage: ./ralph.sh [plan|security|build] [max_iterations] [--goal <text>] [--ref-branch <branch>]
+# Usage: ./ralph.sh [plan|security|build|kill] [max_iterations] [--goal <text>] [--ref-branch <branch>]
 #
 # Examples:
 #   ./ralph.sh                                # Build mode, unlimited
@@ -10,6 +10,7 @@
 #   ./ralph.sh plan                           # Plan mode, interactive goal prompt
 #   ./ralph.sh security --ref-branch develop    # Security mode, unlimited iters
 #   ./ralph.sh security 2 --ref-branch develop  # Security mode, max 2 iters
+#   ./ralph.sh kill                           # SIGINT every running claude process
 
 set -euo pipefail
 
@@ -122,6 +123,21 @@ while [[ $# -gt 0 ]]; do
 done
 
 set -- "${POSITIONAL[@]:-}"
+
+# ────────────────────────────────────────────────
+# Kill mode: SIGINT every running claude process and exit.
+# No prompt file, no loop, no branch checks — just a panic button.
+# ────────────────────────────────────────────────
+
+if [ "${1:-}" = "kill" ]; then
+    echo -e "${YELLOW_BOLD}Sending SIGINT to all claude processes...${RESET}"
+    if pkill -INT -f claude; then
+        echo -e "${GREEN_BOLD}Signal delivered.${RESET}"
+    else
+        echo -e "${YELLOW_BOLD}No matching claude processes found.${RESET}"
+    fi
+    exit 0
+fi
 
 # ────────────────────────────────────────────────
 # Mode, iterations, prompt file
