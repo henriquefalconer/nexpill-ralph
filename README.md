@@ -117,19 +117,25 @@ cat > TARGET.md <<'EOF'
 - **Fidelity**: every RFC test vector from the original test suite must pass in Go.
 EOF
 
-# 6. Commit and push your branch
+# 6. Commit and push the vendored baseline
 git add -A
 git commit -m "workshop: vendor punycode.js + target spec"
 git push -u origin workshop/<your-name>
+
+# 7. Branch off so Ralph's work lives on its own branch, keeping the vendored
+#    baseline clean for later diffs
+git checkout -b workshop/<your-name>/port
+git push -u origin workshop/<your-name>/port
 ```
+
+Ralph's auto-push runs against whatever branch you're on when you invoke `./ds`, so Stages 1–4 will land on `workshop/<your-name>/port`. At the end you can `git diff workshop/<your-name>..workshop/<your-name>/port` to see exactly what Ralph produced.
 
 After Stage 0 your tree looks like:
 
 ```
 nexpill-ralph/
 ├── ralph/               # Ralph tooling — don't touch
-├── Dockerfile           # sandbox definition
-├── ds                   # sandboxed ralph wrapper
+├── ds                   # sandboxed ralph wrapper (builds its own image)
 ├── punycode.js          # vendored source
 ├── punycode.es6.js      # vendored source (ES6 twin)
 ├── tests/               # vendored tests
