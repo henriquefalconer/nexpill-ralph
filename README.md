@@ -1,8 +1,6 @@
 # Ralph Porting Workshop — `punycode.js` → Go
 
-A hands-on workshop for porting based on [ghuntley porting method](https://ghuntley.com/porting/).
-
-Everyone in the room runs the same four stages in parallel, each on their own branch, each producing their own Go port. We compare results at the end.
+A hands-on workshop for porting based on [ghuntley porting method](https://ghuntley.com/porting/) for language porting for Ralph Loop.
 
 ---
 
