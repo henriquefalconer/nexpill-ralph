@@ -53,9 +53,9 @@ gh auth login        # one-time; pick GitHub.com, then HTTPS or SSH
 brew upgrade --cask docker && brew upgrade gh
 ```
 
-### Linux (Ubuntu 26.04)
+### Linux
 
-Docker Desktop for Linux doesn't ship `docker sandbox` yet, so Linux uses the standalone `sbx` CLI — and the clean apt path only works on **Ubuntu 26.04** (or Rocky Linux 8). Earlier Ubuntu releases aren't in Docker's apt repo; upgrade to 26.04 or use a different machine.
+Linux uses the standalone `sbx` CLI. Here's one way to do it on **Ubuntu 26.04**:
 
 ```bash
 curl -fsSL https://get.docker.com | sudo REPO_ONLY=1 sh
@@ -63,8 +63,6 @@ sudo apt-get install -y docker-sbx gh
 sbx login            # one-time, opens a browser OAuth flow
 gh auth login        # one-time; pick GitHub.com, then HTTPS or SSH
 ```
-
-`./ds` auto-detects `sbx` and uses it in place of `docker sandbox`.
 
 ### Windows
 
@@ -133,7 +131,7 @@ Credentials land in the sandbox's `~/.git-credentials` and persist across `./ds`
 
 Everything happens inside a Docker sandbox — both the first `claude` to login and every ralph invocation.
 
-`./ds` is a thin pass-through for `docker sandbox exec` — it runs whatever you hand it inside the project's sandbox, from the repo root. No built-in verbs, no ralph-specific knowledge:
+`./ds` is a thin pass-through for `docker sandbox exec` — it runs whatever you hand it inside the project's sandbox, from the repo root:
 
 ```text
 ./ds                           ≡  docker sandbox run  claude .        # create/open sandbox + interactive claude
@@ -145,66 +143,26 @@ The first invocation of `./ds` builds the sandbox image (~2 min, one time). Ever
 
 ---
 
-## Stage 1 — Tests → specs (≈ 5–15 min)
+## Stage 1 — Running the Loop
 
-Ralph reads every test file, fans out one subagent per file, writes one Markdown spec per test file. Output lands in `specs/tests/`.
-
-```bash
-./ds ./ralph/ralph plan --goal "study every file in tests/* using separate subagents and document in /specs/*.md and link the implementation as citations in the specification (flat structure)"
-```
-
-- Plan mode runs a single iteration by default — enough to produce the spec bundle in one pass.
-- Watch progress live from a second terminal: `tail -f ralph/progress.txt`.
-- Success looks like `specs/tests/tests.md` with ~200 bullet-point behaviors, each citing a `tests/tests.js:<line>`.
-
-**Checkpoint**: spot-check 5 random citations. If they're wrong, the agent was hallucinating — tighten the goal and re-run.
-
----
-
-## Stage 2 — Source → specs with citations (≈ 10–30 min)
-
-```bash
-./ds ./ralph/ralph plan --goal "study every file in src/* using seperate subagents per file and link the implementation as citations in the specification (flat structure)"
-```
-
-**Checkpoint**: open `specs/impl/punycode.md`. It should read like the RFC 3492 algorithm description, with line citations — not like JavaScript with comments.
-
----
-
-## Stage 3 — Specs → `ralph/todo.md` (≈ 3–10 min)
-
-Ralph turns the spec bundle into a prioritized, dependency-ordered porting plan. Every bullet is scoped to one Stage 4 build iteration.
-
-```bash
-./ds ./ralph/ralph plan --goal "okay i want you to come up with a plan that implements the specs/*.md and porting it to Go, that we will use for a claude code sessions - separetely to this. it's important to cite line numbers of specifications and the source code that will be affected. search all the code as needed using up to 10 claude then write the ralph/todo.md as bullet points"
-```
-
----
-
-## Stage 4 — Port (≈ 30 min – 2 hours)
-
-Classic Ralph loop. Each iteration picks the top item off `ralph/todo.md`, implements it, writeso tests, runs tests, commits, pushes, and moves on.
-
-```bash
-./ds ./ralph/ralph
-```
-
-- Build mode runs until Ralph signals `<promise>COMPLETE</promise>` — interrupt with `./ds ./ralph/ralph kill` on another terminal whenever your budget or timebox is up.
-- Sonnet handles build mode (faster and cheaper than Opus per iteration).
-- Ralph auto-pushes after every commit, so your branch on GitHub grows in real time.
-
-When Ralph emits `<promise>COMPLETE</promise>`, it thinks it has finished. Check if that's the case.
-
-The code should have been ported to Go, including tests and functionality that accompanied it.
-
-
-### Extra - Run Whole Command
-
-And, if you want to run it all in one-go, here's what to run:
+And now, to do the conversion, run this in your project directory:
 
 ```bash
 ./ds ./ralph/ralph plan --goal "study every file in tests/* using separate subagents and document in /specs/*.md and link the implementation as citations in the specification (flat structure)" && ./ds ./ralph/ralph plan --goal "study every file in src/* using seperate subagents per file and link the implementation as citations in the specification (flat structure)" && ./ds ./ralph/ralph plan --goal "okay i want you to come up with a plan that implements the specs/*.md and porting it to Go, that we will use for a claude code sessions - separetely to this. it's important to cite line numbers of specifications and the source code that will be affected. search all the code as needed using up to 10 claude then write the ralph/todo.md as bullet points" && ./ds ./ralph/ralph
 ```
+
+### How it works
+
+1. **Tests → specs** (plan, Opus). Compresses every test into a language-agnostic Markdown spec.
+2. **Source → specs with citations** (plan, Opus). Documents every source file with citations back to `path:line`.
+3. **Specs → todo** (plan, Opus). Distills both spec sets into `ralph/todo.md`: a prioritized porting plan.
+4. **Todo → port** (build, Sonnet). Classic Ralph loop: one item per iteration, one commit per iteration.
+
+Whenever Ralph emits `<promise>COMPLETE</promise>` or `<promise>NEXT</promise>`, it means the current iteration has finished and the following is about to start.
+
+After all the iterations have finished, the project should have been ported to Go, and it should include tests and functionality from original code, working and tested by Ralph. Check for all of those to validate it worked.
+
+Happy Ralphing.
 
 ---
 

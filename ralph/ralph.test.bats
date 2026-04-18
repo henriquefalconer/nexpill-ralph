@@ -125,3 +125,103 @@ load_wrapper() {
     run_with_stall_watchdog bash -c 'exit 7' >/dev/null 2>&1 || rc=$?
     [ "$rc" -eq 7 ]
 }
+
+# ─── Per-mode behavior ───
+
+@test "plan mode defaults to 1 iteration when max_iterations not passed" {
+    stub_claude 'echo "<promise>NEXT</promise>"'
+    run ralph/ralph plan --goal "feature"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"reached max iterations (1)"* ]]
+}
+
+@test "security mode defaults to 1 iteration when max_iterations not passed" {
+    stub_claude 'echo "<promise>NEXT</promise>"'
+    run ralph/ralph security --ref-branch main
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"reached max iterations (1)"* ]]
+}
+
+@test "plan mode respects explicit max_iterations" {
+    stub_claude 'echo "<promise>NEXT</promise>"'
+    run ralph/ralph plan 3 --goal "feature"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"reached max iterations (3)"* ]]
+}
+
+@test "security mode respects explicit max_iterations" {
+    stub_claude 'echo "<promise>NEXT</promise>"'
+    run ralph/ralph security 3 --ref-branch main
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"reached max iterations (3)"* ]]
+}
+
+@test "plan mode requires --goal" {
+    stub_claude 'echo "<promise>COMPLETE</promise>"'
+    run ralph/ralph plan 1
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Usage: ./ralph plan"* ]]
+    [[ "$output" == *"--goal"* ]]
+}
+
+@test "plan mode completes on <promise>COMPLETE</promise>" {
+    stub_claude 'echo "<promise>COMPLETE</promise>"'
+    run ralph/ralph plan 1 --goal "feature"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"signaled completion"* ]]
+}
+
+@test "security mode completes on <promise>COMPLETE</promise>" {
+    stub_claude 'echo "<promise>COMPLETE</promise>"'
+    run ralph/ralph security 1 --ref-branch main
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"signaled completion"* ]]
+}
+
+@test "build mode header advertises unlimited iterations when no count passed" {
+    stub_claude 'echo "<promise>COMPLETE</promise>"'
+    run ralph/ralph
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Max iterations: unlimited"* ]]
+}
+
+@test "build mode loops past iteration 1 by default (unlimited)" {
+    # Stub emits NEXT for the first two iterations, then COMPLETE.
+    # If build defaulted to 1 iter, the run would stop after iter 1 with
+    # "reached max iterations" instead of signaling completion at iter 3.
+    stub_claude '
+counter="'"$TEST_DIR"'/counter"
+n=$(cat "$counter" 2>/dev/null || echo 0)
+n=$((n+1))
+echo "$n" > "$counter"
+if [ "$n" -lt 3 ]; then
+    echo "<promise>NEXT</promise>"
+else
+    echo "<promise>COMPLETE</promise>"
+fi'
+    run ralph/ralph
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"signaled completion at iteration 3"* ]]
+}
+
+@test "plan mode substitutes [project-specific goal] in prompt" {
+    # Give the prompt a placeholder; have the stub echo stdin back so we can
+    # confirm the substitution reached claude.
+    echo "GOAL_WAS=[project-specific goal]" > "$TEST_DIR/ralph/prompt-plan.md"
+    stub_claude '
+cat > "'"$TEST_DIR"'/claude-stdin"
+echo "<promise>COMPLETE</promise>"'
+    run ralph/ralph plan 1 --goal "MY_SPECIAL_GOAL"
+    [ "$status" -eq 0 ]
+    grep -q "GOAL_WAS=MY_SPECIAL_GOAL" "$TEST_DIR/claude-stdin"
+}
+
+@test "security mode substitutes [ref-branch] in prompt" {
+    echo "REF=[ref-branch]" > "$TEST_DIR/ralph/prompt-security.md"
+    stub_claude '
+cat > "'"$TEST_DIR"'/claude-stdin"
+echo "<promise>COMPLETE</promise>"'
+    run ralph/ralph security 1 --ref-branch MY_SPECIAL_BRANCH
+    [ "$status" -eq 0 ]
+    grep -q "REF=MY_SPECIAL_BRANCH" "$TEST_DIR/claude-stdin"
+}

@@ -6,10 +6,9 @@
 # Examples:
 #   ./ralph                                # Build mode, unlimited
 #   ./ralph 20                             # Build mode, max 20
-#   ./ralph plan 3                         # Plan mode, max 3 iters
+#   ./ralph plan --goal "feature"          # Plan mode, 1 iter (default)
 #   ./ralph plan 3 --goal "feature"        # Plan mode, max 3 iters, custom goal
-#   ./ralph plan                           # Plan mode, interactive goal prompt
-#   ./ralph security --ref-branch develop    # Security mode, unlimited iters
+#   ./ralph security --ref-branch develop    # Security mode, 1 iter (default)
 #   ./ralph security 2 --ref-branch develop  # Security mode, max 2 iters
 #   ./ralph kill                           # SIGINT every running claude process
 
@@ -104,7 +103,7 @@ POSITIONAL=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --goal|--project-goal|-g|--project_specific_goal)
+        --goal)
             shift
             [[ $# -eq 0 ]] && { echo -e "${RED_BOLD}Error: --goal requires a value${RESET}"; exit 1; }
             GOAL_TEXT="$1"
@@ -152,7 +151,6 @@ if [ "${1:-}" = "plan" ]; then
 elif [ "${1:-}" = "security" ]; then
     MODE="security"
     shift
-    MAX_ITERATIONS="${1:-0}"
     MAX_ITERATIONS="${1:-1}"
     [[ "$MAX_ITERATIONS" =~ ^[0-9]+$ ]] && shift || MAX_ITERATIONS=1
 elif [[ "${1:-}" =~ ^[0-9]+$ ]]; then
@@ -164,80 +162,9 @@ else
     MAX_ITERATIONS=0
 fi
 
-# Legacy positional goal
-if [ -z "$GOAL_TEXT" ] && [ $# -ge 1 ] && [ -n "${1:-}" ]; then
-    GOAL_TEXT="$1"
-    shift || true
-fi
-
-# Interactive goal editor (plan mode only, when missing)
-if [ "$MODE" = "plan" ] && [ -z "$GOAL_TEXT" ]; then
-    GOAL_TEXT=""
-    cursor_pos=${#GOAL_TEXT}
-    old_stty=$(stty -g 2>/dev/null)
-    stty -icanon -echo min 1 time 0 2>/dev/null
-    printf '\033[?25l'
-    trap '
-        stty "$old_stty" 2>/dev/null
-        printf "\033[?25h"
-        exit 1
-    ' INT TERM EXIT
-
-    while true; do
-        clear 2>/dev/null || printf '\033[H\033[2J'
-        printf "${GREEN_BOLD}Type your goal - Enter to select project-specific goal for the agent to cycle planning${RESET}\n\n"
-        printf "\rAs our next objective, we want to achieve ${GREEN_BOLD}%s_${RESET}" "${GOAL_TEXT:0:$cursor_pos}"
-        if [ $cursor_pos -lt ${#GOAL_TEXT} ]; then
-            printf "${YELLOW_BOLD}%s_${RESET}" "${GOAL_TEXT:cursor_pos:1}"
-        fi
-        printf "\n\n${YELLOW_BOLD}Examples:${RESET}\n"
-        printf "  • repo with full spec implementation\n"
-        printf "  • a detailed analytics system based on specs/analytics.md\n"
-        printf "  • a great working ui and ux\n"
-        printf "  • an AI-powered data import system based on specs/data-import.md\n\n"
-        IFS= read -r -n 1 -d '' c 2>/dev/null
-        case "$c" in
-            "" | $'\n') break ;;
-            $'\177' | $'\b')
-                if [ $cursor_pos -gt 0 ]; then
-                    GOAL_TEXT="${GOAL_TEXT:0:$((cursor_pos-1))}${GOAL_TEXT:$cursor_pos}"
-                    cursor_pos=$((cursor_pos-1))
-                fi
-                ;;
-            $'\003') break ;;
-            [[:print:]])
-                GOAL_TEXT="${GOAL_TEXT:0:$cursor_pos}${c}${GOAL_TEXT:$cursor_pos}"
-                cursor_pos=$((cursor_pos+1))
-                ;;
-            *) ;;
-        esac
-    done
-
-    stty "$old_stty" 2>/dev/null
-    printf '\033[?25h'
-    trap 'cleanup' EXIT
-    trap 'echo "Received interrupt, cleaning up..."; exit 130' INT
-    trap 'echo "Received termination signal, cleaning up..."; exit 143' TERM
-
-    GOAL_TEXT=$(echo "$GOAL_TEXT" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-
-    if [ -z "$GOAL_TEXT" ]; then
-        echo -e "\nEmpty goal → exiting."
-        exit 1
-    fi
-
-    clear 2>/dev/null || printf '\033[H\033[2J'
-    echo -e "${GREEN_BOLD}Confirm goal${RESET}"
-    echo -e "────────────────────────────────────────────────────────────────────"
-    echo -e "As our next objective, we want to achieve ${GREEN_BOLD}${GOAL_TEXT}${RESET}."
-    echo -e "────────────────────────────────────────────────────────────────────\n"
-    echo -en "${GREEN_BOLD}Good? [Y/n] ${RESET}"
-    read -n 1 -r confirm 2>/dev/null
-    echo
-    if [[ -n "$confirm" && ! "$confirm" =~ ^[Yy]$ ]]; then
-        echo -e "Cancelled."
-        exit 1
-    fi
+# Plan mode requires --goal
+if [ "$MODE" = "plan" ]; then
+    GOAL_TEXT="${GOAL_TEXT:?Usage: ./ralph plan [max_iterations] --goal <branch>}"
 fi
 
 # Security mode requires --ref-branch
