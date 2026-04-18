@@ -7,9 +7,7 @@
 #   ./ralph                                # Build mode, unlimited
 #   ./ralph 20                             # Build mode, max 20
 #   ./ralph plan --goal "feature"          # Plan mode, 1 iter (default)
-#   ./ralph plan 3 --goal "feature"        # Plan mode, max 3 iters, custom goal
 #   ./ralph security --ref-branch develop    # Security mode, 1 iter (default)
-#   ./ralph security 2 --ref-branch develop  # Security mode, max 2 iters
 #   ./ralph kill                           # SIGINT every running claude & ralph process
 
 set -euo pipefail
@@ -175,12 +173,12 @@ fi
 
 # Plan mode requires --goal
 if [ "$MODE" = "plan" ]; then
-    GOAL_TEXT="${GOAL_TEXT:?Usage: ./ralph plan [max_iterations] --goal <branch>}"
+    GOAL_TEXT="${GOAL_TEXT:?Usage: ./ralph plan --goal <branch>}"
 fi
 
 # Security mode requires --ref-branch
 if [ "$MODE" = "security" ]; then
-    REF_BRANCH="${REF_BRANCH:?Usage: ./ralph security [max_iterations] --ref-branch <branch>}"
+    REF_BRANCH="${REF_BRANCH:?Usage: ./ralph security --ref-branch <branch>}"
 fi
 
 # Validate prompt file
