@@ -312,6 +312,11 @@ while true; do
         exit 1
     fi
 
+    # Commit remaining progress.txt and .last-branch files (non-fatal: may have
+    # nothing to commit or no git user configured in test/CI environments)
+    git add ralph/.last-branch ralph/progress.txt
+    git commit -m "commit progress.txt and .last-branch files" 2>/dev/null || true
+
     # Push changes after each iteration (non-fatal if it fails)
     git -C "$REPO_ROOT" push origin "$CURRENT_BRANCH" 2>/dev/null || \
         git -C "$REPO_ROOT" push -u origin "$CURRENT_BRANCH" 2>/dev/null || true
