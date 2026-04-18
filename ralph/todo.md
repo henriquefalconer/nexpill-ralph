@@ -12,11 +12,11 @@ Fidelity bar (from `TARGET.md:10`): every RFC test vector in `tests/tests.js` mu
 
 - Test-driven specs in `specs/` (flat): `specs/punycode-ucs2-decode.md` (`tests/tests.js:245-271`), `specs/punycode-ucs2-encode.md` (`tests/tests.js:273-288`), `specs/punycode-decode.md` (`tests/tests.js:290-310`), `specs/punycode-encode.md` (`tests/tests.js:312-321`), `specs/punycode-to-unicode.md` (`tests/tests.js:323-344`), `specs/punycode-to-ascii.md` (`tests/tests.js:346-371`), and `specs/test-data-fixtures.md` for the shared vector tables at `tests/tests.js:6-243`. See `specs/README.md:7-19`.
 - Source-driven specs: `specs/src-punycode.md` (covers `punycode.js:1-443` section by section) and `specs/src-scripts-prepublish.md` (the 17-line JS build step — out of port scope).
-- No `port/` directory exists yet (verified). All bullets below are unbuilt.
+- `port/` directory created with full Go implementation (all items 1-10 complete).
 
-## Next iterations (in dependency order)
+## Next iterations (in dependency order) — ALL DONE
 
-1. **Bootstrap the Go module + test scaffold.**
+1. **Bootstrap the Go module + test scaffold.** — DONE
    - Create `port/` directory; run `cd port && go mod init punycode-port` (per `TARGET.md:5`). Target Go 1.22+ (`TARGET.md:3`), package name `punycode` (`TARGET.md:6`).
    - Add `port/doc.go` with the package-level comment: "Package punycode implements RFC 3492 Bootstring + IDNA2003 separator normalisation, ported from punycode.js".
    - Add `port/punycode_test.go` containing the shared vector tables as Go literals, mirroring the four buckets catalogued in `specs/test-data-fixtures.md:9-71`: `strings` (`tests/tests.js:7-136`), `ucs2` (`tests/tests.js:137-175`), `domains` (`tests/tests.js:176-220`), `separators` (`tests/tests.js:221-242`). Each row needs `description`, `decoded`, `encoded` fields (plus `ucs2` for the bucket of the same name).
