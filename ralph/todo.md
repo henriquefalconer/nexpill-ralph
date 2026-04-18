@@ -139,7 +139,7 @@ The port lives at `port/` (new directory, a Go module — see bullet 1). There i
   - Add a round-trip property test: `Decode(Encode(decoded)) == decoded` for every `testData.strings` fixture — belts-and-braces.
 - Spec: `specs/punycode-encode.md`, `specs/src-punycode.md:209-267`.
 
-### 9. Implement `mapDomain` (private helper) with IDNA2003 separator normalisation + email splitting
+### 9. [DONE] Implement `mapDomain` (private helper) with IDNA2003 separator normalisation + email splitting
 
 - Add `port/domain.go` with `func mapDomain(domain string, callback func(label string) (string, error)) (string, error)` mirroring `punycode.js:62-86`.
 - Algorithm (`specs/src-punycode.md:74-80`):
@@ -151,7 +151,7 @@ The port lives at `port/` (new directory, a Go module — see bullet 1). There i
 - Unit tests in `port/domain_test.go`: cover the four separators (`specs/test-data-fixtures.md` separators bucket, `tests/tests.js:221-242`); cover email splitting with `foo@bar.com` → prefix `"foo@"`, domain `"bar.com"`; cover plain domain with no `@`.
 - Do NOT re-implement the private JS `map` (`punycode.js:45-60`) — use the Go `for range` idiom. The JS reverse-walk is non-observable (`specs/src-punycode.md:70`).
 
-### 10. Implement `ToUnicode` + `ToASCII` wrappers
+### 10. [DONE] Implement `ToUnicode` + `ToASCII` wrappers
 
 - In `port/punycode.go` add:
   - `func ToUnicode(input string) string` — mirror `punycode.js:389-395`.
@@ -169,7 +169,7 @@ The port lives at `port/` (new directory, a Go module — see bullet 1). There i
   - Email preservation: `ToUnicode("джумла@xn--p-8sbkgc5ag7bhce.xn--ba-lmcq") == "джумла@джpумлатест.bрфa"` and reverse (`tests/tests.js:211-215`).
 - Spec: `specs/punycode-to-ascii.md`, `specs/punycode-to-unicode.md`, `specs/src-punycode.md:269-291`.
 
-### 11. Port the `testData` fixture table to Go
+### 11. [DONE] Port the `testData` fixture table to Go
 
 - Add `port/testdata_test.go` with four `var` tables mirroring `testData` at `tests/tests.js:6-243`:
   - `stringsFixtures` — 25 records, schema `{Description, Decoded, Encoded string}` (`tests/tests.js:7-136`, `specs/test-data-fixtures.md` strings section).
@@ -180,7 +180,7 @@ The port lives at `port/` (new directory, a Go module — see bullet 1). There i
 - This is the single source of truth for tests in bullets 6, 7, 8, 10 — refactor those tests to consume these tables on the iteration that lands this bullet (if they were hardcoded in earlier bullets, collapse the duplication here).
 - Spec: `specs/test-data-fixtures.md`, `specs/src-tests-tests.md`.
 
-### 12. Mirror the six `describe` blocks as Go test functions
+### 12. [DONE] Mirror the six `describe` blocks as Go test functions
 
 - In `port/punycode_test.go` (or one test file per unit — either works), define exactly six test functions, one per JS `describe` block (`tests/tests.js:245-371`):
   - `TestUCS2Decode` — iterates `ucs2Fixtures`, asserts `UCS2Decode(Encoded) == Decoded` (`tests/tests.js:245-271`, ignoring the two misplaced RangeError tests which belong with `TestDecode`).
@@ -192,12 +192,20 @@ The port lives at `port/` (new directory, a Go module — see bullet 1). There i
 - Use `t.Run(fixture.Description, …)` sub-tests so failures report by description — mirrors the JS `it(…, ...)` naming (`specs/src-tests-tests.md`).
 - All six must pass on `go test ./port/...`.
 
-### 13. Repository polish
+### 13. [DONE] Repository polish
 
 - Add `port/go.sum` (empty or absent — there are no deps; `go mod tidy` will touch-and-leave).
 - Add `.github/workflows/go.yml` (new workflow, does NOT modify any existing workflow file) that runs `go build ./port/... && go test ./port/...` on push/PR. Match Go version `1.22` (bullet 1).
 - Add a row to `specs/README.md` ONLY IF mentioning a new port location would help a porter — but since `specs/README.md:3` already says "It is the source-of-truth for the Go port at `port/`", no edit is required. Verify by re-reading before the commit.
 - Acceptance: whole repo `go test ./port/...` is green in CI.
+
+---
+
+## Status: COMPLETE
+
+All 13 bullets implemented. `go build ./...`, `go test ./...`, and `go vet ./...` are all green.
+All 46 JS fixtures (25 strings + 7 ucs2 + 10 domains + 4 separators) assert in the Go suite.
+All three error paths (`ErrNotBasic`, `ErrInvalidInput`, `ErrOverflow`) are covered.
 
 ---
 
@@ -218,3 +226,8 @@ The port lives at `port/` (new directory, a Go module — see bullet 1). There i
 - All 46 JS test fixtures (25 strings + 7 ucs2 + 10 domains + 4 separators — `specs/test-data-fixtures.md`) assert in the Go suite with the same expected values.
 - All three error paths (`ErrNotBasic`, `ErrInvalidInput`, `ErrOverflow`) are covered by at least one test each.
 - `go vet ./port/...` is clean; `gofmt -l port/` outputs nothing.
+
+
+## IMPORTANT
+
+- all Go modules should have a corresponding test file to accompany it

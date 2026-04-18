@@ -1,0 +1,122 @@
+═══════════════════════════════════════════════════════
+  Ralph Iteration 1
+═══════════════════════════════════════════════════════
+
+Finding most important item to address in todo.md, checking existing port/ implementation...
+
+port/ directory not found - starting from bullet 1 (scaffold). Will create go.mod, doc.go, LICENSE, README.md.
+
+Chose bullet 1 (scaffold), it's the foundation of all subsequent bullets.
+
+Scaffold verified: go build and go vet clean. Creating commit now.
+
+## 2026-04-18 UTC - Changes committed.
+- Bullet 1: scaffold Go module at port/
+- Files changed: port/go.mod, port/doc.go, port/LICENSE, port/README.md
+- **Brief description of changes:**
+  - Created port/go.mod with module github.com/mathiasbynens/punycode, go 1.22, zero deps
+  - Created port/doc.go with package doc listing all public symbols and sentinel errors
+  - Created port/LICENSE as copy of LICENSE-MIT.txt
+  - Created port/README.md with Go→JS→line mapping table
+---
+═══════════════════════════════════════════════════════
+  Ralph Iteration 2
+═══════════════════════════════════════════════════════
+
+Finding most important item to address by checking current port/ state...
+
+Chose bullet 2: constants + errors, it's the foundation for all Bootstring arithmetic.
+
+## 2026-04-18 UTC - Changes committed.
+- Implemented bullet 2: Bootstring constants + sentinel errors
+- Files changed: port/constants.go, port/errors.go, port/constants_test.go
+- **Brief description of changes:**
+  - Added all 9 Bootstring constants from punycode.js:3-14
+  - Added 3 exported sentinel errors with verbatim JS message strings
+  - Added unit tests asserting all constant values and error messages
+---
+═══════════════════════════════════════════════════════
+  Ralph Iteration 3
+═══════════════════════════════════════════════════════
+
+Finding most important item to address from todo.md (bullets 3+ remain)...
+
+Chose bullet 3+4+5 (basicToDigit, digitToBasic, adapt in bootstring.go), as they're the next dependency-ordered items.
+
+## 2026-04-18 UTC - Changes committed.
+- Implemented basicToDigit, digitToBasic, adapt in port/bootstring.go
+- Files changed: port/bootstring.go, port/bootstring_test.go
+- **Brief description of changes:**
+  - basicToDigit: 4-branch table, case-insensitive folding (A-Z and a-z → same digits)
+  - digitToBasic: lowercase-only emission, flag param dropped
+  - adapt: RFC 3492 §3.4 bias adaptation, integer division matches JS Math.floor on non-negative inputs
+---
+═══════════════════════════════════════════════════════
+  Ralph Iteration 4
+═══════════════════════════════════════════════════════
+
+Finding most important item to address from todo.md — bullets 1-5 are done (scaffold, constants, basicToDigit, digitToBasic, adapt). Next is bullet 6: UCS-2/UTF-16 layer...
+
+Chose Bullet 6: UCS-2/UTF-16 layer — ucs2.go + ucs2_test.go. No ucs2.go exists yet.
+
+Reading JS source and specs complete. Implementing ucs2.go (UCS2Decode, UCS2DecodeUTF16, UCS2Encode, UCS2EncodeUTF16) and ucs2_test.go with all 7 fixtures...
+
+## 2026-04-18 UTC - Changes committed.
+- Implemented bullet 6: UCS-2/UTF-16 layer
+- Files added: port/ucs2.go, port/ucs2_test.go
+- **Brief description of changes:**
+  - UCS2Decode(string) []rune — UTF-8 path for normal input
+  - UCS2DecodeUTF16([]uint16) []rune — UTF-16 path preserving lone surrogates (punycode.js:101-123)
+  - UCS2Encode([]rune) string — converts code points to UTF-8 string (punycode.js:125-133)
+  - UCS2EncodeUTF16([]rune) []uint16 — converts code points to UTF-16 code units
+  - All 7 ucs2 fixtures (tests/tests.js:137-175) pass in both directions
+  - Immutability test from tests/tests.js:282-287 passes
+---
+═══════════════════════════════════════════════════════
+  Ralph Iteration 5
+═══════════════════════════════════════════════════════
+
+Finding most important item to address — reading todo.md and current port/ state...
+
+Bullet 7 (Decode) is the next pending item. Reading punycode.js decode section...
+
+Chose bullet 7 (Decode), it's the next unimplemented core function. Implementing port/decode.go now...
+
+## 2026-04-18 UTC - Changes committed.
+- Implemented bullet 7: Decode (Bootstring decoder)
+- Files changed: port/decode.go, port/decode_test.go
+- **Brief description of changes:**
+  - Decode() mirrors punycode.js:196-281 with all 3 overflow guards
+  - 25 string fixtures from tests.js + ZZZ/error-path tests
+  - All 28 TestDecode sub-tests pass; no regressions in prior suite
+---
+═══════════════════════════════════════════════════════
+  Ralph Iteration 6
+═══════════════════════════════════════════════════════
+
+Finding most important item to address by checking current state of port/ and todo.md...
+
+Chose bullet 8 (Encode), it's the Bootstring encoder of punycode.
+
+Reading punycode.js lines 283-376 to understand the algorithm...
+
+Reading bootstring.go to check digitToBasic signature before writing encode.go...
+
+## 2026-04-18 UTC - Changes committed.
+- Implemented bullet 8: Encode (Bootstring encoder)
+- Files changed: port/encode.go (new), port/encode_test.go (new)
+- **Brief description of changes:**
+  - Ported punycode.js:283-376 encode() to Go func Encode(string) (string,error)
+  - Overflow guards D and E implemented matching JS int32 boundaries
+  - TestEncode: all 24 stringsFixtures pass
+  - TestEncodeDecodeRoundTrip: round-trip property test for all 24 fixtures
+---
+═══════════════════════════════════════════════════════
+  Ralph Iteration 7
+═══════════════════════════════════════════════════════
+
+Finding most important item to address by reviewing todo.md and current port/ state...
+
+Chose bullet 9+10+11+12: mapDomain, ToUnicode/ToASCII wrappers, testdata fixtures, and the six describe-block test functions. These are the last functional pieces before repo polish.
+
+Conflicts found: existing decode_test.go and ucs2_test.go already define stringsFixtures and ucs2Fixtures. Refactoring to consolidate into testdata_test.go (single source of truth per bullet 11).
