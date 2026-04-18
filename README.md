@@ -139,8 +139,8 @@ Everything happens inside a Docker sandbox — both the first `claude` to login 
 
 ```text
 ./ds                           ≡  docker sandbox run  claude .        # create/open sandbox + interactive claude
-./ds ./ralph/ralph.sh plan --goal …  ≡  docker sandbox exec … ./ralph/ralph.sh plan --goal …
-./ds ./ralph/ralph.sh             ≡  docker sandbox exec … ./ralph/ralph.sh
+./ds ./ralph/ralph plan --goal …  ≡  docker sandbox exec … ./ralph/ralph plan --goal …
+./ds ./ralph/ralph             ≡  docker sandbox exec … ./ralph/ralph
 ./ds go test ./port/...        ≡  docker sandbox exec … go test ./port/...   # any command works
 ```
 
@@ -153,7 +153,7 @@ The first invocation of `./ds` builds the sandbox image (~2 min, one time). Ever
 Ralph reads every test file, fans out one subagent per file, writes one Markdown spec per test file. Output lands in `specs/tests/`.
 
 ```bash
-./ds ./ralph/ralph.sh plan --goal "for every test file matching tests/**/*.js in this repo, use a separate subagent to produce specs/tests/<basename>.md capturing EVERY behavior the tests assert, in language-agnostic prose, with citations tests/<path>:<line>. Describe what the tests observe and require, never how the implementation works. Stop when every test file has a corresponding spec."
+./ds ./ralph/ralph plan --goal "study every file in tests/* using separate subagents and document in /specs/*.md and link the implementation as citations in the specification"
 ```
 
 - Plan mode runs a single iteration by default — enough to produce the spec bundle in one pass.
@@ -167,7 +167,7 @@ Ralph reads every test file, fans out one subagent per file, writes one Markdown
 ## Stage 2 — Source → specs with citations (≈ 10–30 min)
 
 ```bash
-./ds ./ralph/ralph.sh plan --goal "use a subagent to read punycode.js in full and produce specs/impl/punycode.md documenting public and internal behavior, invariants, data flow, and edge cases, with citations to punycode.js:<line>. The spec must be sufficient for a from-scratch reimplementation in any language — do not use JavaScript syntax in the prose. Follow the RFC 3492 structure where it maps naturally."
+./ds ./ralph/ralph plan --goal "study every file in src/* using seperate subagents per file and link the implementation as citations in the specification"
 ```
 
 **Checkpoint**: open `specs/impl/punycode.md`. It should read like the RFC 3492 algorithm description, with line citations — not like JavaScript with comments.
@@ -179,7 +179,7 @@ Ralph reads every test file, fans out one subagent per file, writes one Markdown
 Ralph turns the spec bundle into a prioritized, dependency-ordered porting plan. Every bullet is scoped to one Stage 4 build iteration.
 
 ```bash
-./ds ./ralph/ralph.sh plan --goal "author ralph/todo.md as a prioritized porting plan from the specs under specs/tests/** and specs/impl/** into Go per TARGET.md. Order items by dependency: Go module scaffolding first (go.mod, package layout in port/), then primitives (ucs2 codec, digit mapping, bias adaptation), then the composite encoders/decoders (encode, decode, toASCII, toUnicode). Each bullet must be scoped to one ralph build iteration (~one commit) and must end with the test(s) from specs/tests/** that verify it. Finish when ralph/todo.md is a clean ordered list covering every behavior in the specs."
+./ds ./ralph/ralph plan --goal "author ralph/todo.md as a prioritized porting plan from the specs under specs/tests/** and specs/impl/** into Go per TARGET.md. Order items by dependency: Go module scaffolding first (go.mod, package layout in port/), then primitives (ucs2 codec, digit mapping, bias adaptation), then the composite encoders/decoders (encode, decode, toASCII, toUnicode). Each bullet must be scoped to one ralph build iteration (~one commit) and must end with the test(s) from specs/tests/** that verify it. Finish when ralph/todo.md is a clean ordered list covering every behavior in the specs."
 ```
 
 **Checkpoint**: open `ralph/todo.md`. The top item should be scaffolding (`go.mod`, empty `port/punycode.go`, empty `port/punycode_test.go`). The last item should be the most composite function. Every item should reference a spec.
@@ -191,7 +191,7 @@ Ralph turns the spec bundle into a prioritized, dependency-ordered porting plan.
 Classic Ralph loop. Each iteration picks the top item off `ralph/todo.md`, implements it into `port/`, writes Go tests, runs `go test`, commits, pushes, and moves on.
 
 ```bash
-./ds ./ralph/ralph.sh
+./ds ./ralph/ralph
 ```
 
 - Build mode runs until Ralph signals `<promise>COMPLETE</promise>` — interrupt with Ctrl+C whenever your budget or timebox is up.
@@ -215,7 +215,7 @@ Every RFC test vector from `specs/tests/*.md` should have a Go counterpart that 
 | `progress.txt` idle for minutes | Subagent hung or spinning | Wait — the stall watchdog (30 min default) will kill it |
 | Same todo item keeps coming back | Agent is guessing, not reading the spec | Kill the loop, open the todo + spec, tighten the spec wording |
 | `go test` fails but agent commits anyway | Build loop didn't verify | Add a "must run `go test` and show output" line to `TARGET.md`, re-run |
-| `<promise>COMPLETE</promise>` before tests pass | Agent's definition of done is weak | Re-run `./ds ./ralph/ralph.sh` to keep iterating |
+| `<promise>COMPLETE</promise>` before tests pass | Agent's definition of done is weak | Re-run `./ds ./ralph/ralph` to keep iterating |
 
 ---
 
