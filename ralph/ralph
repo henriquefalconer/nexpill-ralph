@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 
 # Ralph Wiggum - Long-running AI agent loop
-# Usage: ./ralph.sh [plan|security|build|kill] [max_iterations] [--goal <text>] [--ref-branch <branch>]
+# Usage: ./ralph [plan|security|build|kill] [max_iterations] [--goal <text>] [--ref-branch <branch>]
 #
 # Examples:
-#   ./ralph.sh                                # Build mode, unlimited
-#   ./ralph.sh 20                             # Build mode, max 20
-#   ./ralph.sh plan 3                         # Plan mode, max 3 iters
-#   ./ralph.sh plan 3 --goal "feature"        # Plan mode, max 3 iters, custom goal
-#   ./ralph.sh plan                           # Plan mode, interactive goal prompt
-#   ./ralph.sh security --ref-branch develop    # Security mode, unlimited iters
-#   ./ralph.sh security 2 --ref-branch develop  # Security mode, max 2 iters
-#   ./ralph.sh kill                           # SIGINT every running claude process
+#   ./ralph                                # Build mode, unlimited
+#   ./ralph 20                             # Build mode, max 20
+#   ./ralph plan 3                         # Plan mode, max 3 iters
+#   ./ralph plan 3 --goal "feature"        # Plan mode, max 3 iters, custom goal
+#   ./ralph plan                           # Plan mode, interactive goal prompt
+#   ./ralph security --ref-branch develop    # Security mode, unlimited iters
+#   ./ralph security 2 --ref-branch develop  # Security mode, max 2 iters
+#   ./ralph kill                           # SIGINT every running claude process
 
 set -euo pipefail
 
@@ -242,7 +242,7 @@ fi
 
 # Security mode requires --ref-branch
 if [ "$MODE" = "security" ]; then
-    REF_BRANCH="${REF_BRANCH:?Usage: ./ralph.sh security [max_iterations] --ref-branch <branch>}"
+    REF_BRANCH="${REF_BRANCH:?Usage: ./ralph security [max_iterations] --ref-branch <branch>}"
 fi
 
 # Validate prompt file

@@ -177,58 +177,26 @@ Ralph reads every test file, fans out one subagent per file, writes one Markdown
 Ralph turns the spec bundle into a prioritized, dependency-ordered porting plan. Every bullet is scoped to one Stage 4 build iteration.
 
 ```bash
-./ds ./ralph/ralph plan --goal "author ralph/todo.md as a prioritized porting plan from the specs under specs/tests/** and specs/impl/** into Go per TARGET.md. Order items by dependency: Go module scaffolding first (go.mod, package layout in port/), then primitives (ucs2 codec, digit mapping, bias adaptation), then the composite encoders/decoders (encode, decode, toASCII, toUnicode). Each bullet must be scoped to one ralph build iteration (~one commit) and must end with the test(s) from specs/tests/** that verify it. Finish when ralph/todo.md is a clean ordered list covering every behavior in the specs."
+./ds ./ralph/ralph plan --goal "okay i want you to come up with a plan that implements the specs/*.md and porting it to Go, that we will use for a claude code sessions - separetely to this. it's important to cite line numbers of specifications and the source code that will be affected. search all the code as needed using up to 10 claude then write the ralph/todo.md as bullet points"
 ```
-
-**Checkpoint**: open `ralph/todo.md`. The top item should be scaffolding (`go.mod`, empty `port/punycode.go`, empty `port/punycode_test.go`). The last item should be the most composite function. Every item should reference a spec.
 
 ---
 
 ## Stage 4 — Port (≈ 30 min – 2 hours)
 
-Classic Ralph loop. Each iteration picks the top item off `ralph/todo.md`, implements it into `port/`, writes Go tests, runs `go test`, commits, pushes, and moves on.
+Classic Ralph loop. Each iteration picks the top item off `ralph/todo.md`, implements it, writeso tests, runs tests, commits, pushes, and moves on.
 
 ```bash
 ./ds ./ralph/ralph
 ```
 
-- Build mode runs until Ralph signals `<promise>COMPLETE</promise>` — interrupt with Ctrl+C whenever your budget or timebox is up.
+- Build mode runs until Ralph signals `<promise>COMPLETE</promise>` — interrupt with `./ds ./ralph/ralph kill` on another terminal whenever your budget or timebox is up.
 - Sonnet handles build mode (faster and cheaper than Opus per iteration).
 - Ralph auto-pushes after every commit, so your branch on GitHub grows in real time.
 
-When Ralph emits `<promise>COMPLETE</promise>`, run the Go test suite yourself from the host:
+When Ralph emits `<promise>COMPLETE</promise>`, it thinks it has finished. Check if that's the case.
 
-```bash
-./ds go test ./port/... -v
-```
-
-Every RFC test vector from `specs/tests/*.md` should have a Go counterpart that passes.
-
----
-
-## What to watch for during the loop
-
-| Signal | Meaning | What to do |
-|---|---|---|
-| `progress.txt` idle for minutes | Subagent hung or spinning | Wait — the stall watchdog (30 min default) will kill it |
-| Same todo item keeps coming back | Agent is guessing, not reading the spec | Kill the loop, open the todo + spec, tighten the spec wording |
-| `go test` fails but agent commits anyway | Build loop didn't verify | Add a "must run `go test` and show output" line to `TARGET.md`, re-run |
-| `<promise>COMPLETE</promise>` before tests pass | Agent's definition of done is weak | Re-run `./ds ./ralph/ralph` to keep iterating |
-
----
-
-## Limitations & honest caveats
-
-1. **Token cost scales with participants.** Ten people × four stages × Opus planning + Sonnet building = real money. Interrupt the build loop with Ctrl+C once you've seen enough; a Max plan subscription absorbs most of this.
-2. **Rate limits on a shared account.** Plan prompts fan out many parallel subagents. Ten participants starting Stage 1 simultaneously can hit org-level request caps. Stagger stage starts by 30 seconds if needed.
-3. **Non-determinism is the point.** Two participants with the same goal produce different specs and different ports. Plan a group diff-review at the end — it's the most interesting part of the workshop.
-4. **Tests don't port 1:1.** Mocha's `describe`/`it` + array-driven vectors become Go's `testing` + table-driven subtests. The agent rewrites rather than translates; edge cases occasionally drop. Spot-check.
-5. **"Complete" is agent-declared, not verified.** Ralph signals completion when `ralph/todo.md` is empty. That doesn't mean `go test` is green. Always re-run tests manually via `./ds go test ./port/...`.
-6. **Docker image size.** The sandbox image is ~800 MB (Ubuntu + Claude Code + Go). Budget disk accordingly on participant machines.
-7. **Git push from inside the sandbox** needs credentials. The Stage 0 PAT step caches HTTPS creds in the sandbox's `~/.git-credentials`; alternatively, `./ds` mounts `~/.ssh` read-only so an SSH remote works too. If neither is set up, pushes fail silently and you can push manually from the host after each stage.
-8. **Source protection is soft.** Nothing *forbids* editing `punycode.js`; plan mode says "markdown only" but build mode doesn't guard source paths. If the agent rewrites the original source, `git checkout -- punycode.js`.
-9. **Workshop usually won't finish in-session.** A complete port takes 20–40 build iterations. In a 2-hour slot you'll see Stages 1–3 complete plus a partial port in Stage 4. That's the demo — participants continue at home.
-10. **Go is pedagogically safe, not maximally dramatic.** For the full "compiler-as-teacher" effect ghuntley describes, target Rust instead — but expect 2–3× the iterations.
+The code should have been ported to Go, including tests and functionality that accompanied it.
 
 ---
 
