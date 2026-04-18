@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 # Ralph Wiggum - Long-running AI agent loop
 # Usage: ./ralph.sh [plan|security|build|kill] [max_iterations] [--goal <text>] [--ref-branch <branch>]
 #
