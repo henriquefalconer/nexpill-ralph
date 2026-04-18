@@ -1,6 +1,6 @@
 # Ralph Porting Workshop — `punycode.js` → Go
 
-A hands-on workshop for porting based on [ghuntley porting method](https://ghuntley.com/porting/) for language porting for Ralph Loop.
+A hands-on workshop for porting based on [ghuntley porting method](https://ghuntley.com/porting/) for language porting with Ralph.
 
 ---
 
