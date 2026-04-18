@@ -4,7 +4,8 @@ Port `punycode.js` to idiomatic Go under `port/` per `TARGET.md`. Each bullet is
 
 ## Baseline — DONE
 
-- Language-agnostic specs in `specs/` (flat structure), one per Mocha describe block plus a shared fixtures spec and an index. See `specs/README.md`. Every claim is cited to `punycode.js` and/or `tests/tests.js`.
+- Test-driven specs in `specs/` (flat structure), one per Mocha describe block plus a shared fixtures spec and an index. See `specs/README.md`. Every claim is cited to `punycode.js` and/or `tests/tests.js`.
+- Source-driven specs in `specs/` (flat structure), one per source file: `specs/src-punycode.md` (the 443-line library) and `specs/src-scripts-prepublish.md` (the 17-line build step). Every section cites the exact source line range.
 
 ## Next iterations (in dependency order)
 
