@@ -120,3 +120,20 @@ Finding most important item to address by reviewing todo.md and current port/ st
 Chose bullet 9+10+11+12: mapDomain, ToUnicode/ToASCII wrappers, testdata fixtures, and the six describe-block test functions. These are the last functional pieces before repo polish.
 
 Conflicts found: existing decode_test.go and ucs2_test.go already define stringsFixtures and ucs2Fixtures. Refactoring to consolidate into testdata_test.go (single source of truth per bullet 11).
+
+Push failed: PAT lacks 'workflow' scope needed for .github/workflows/go.yml. All work is committed locally. User needs to grant workflow scope on their GitHub PAT or push manually.
+
+## 2026-04-18 UTC - Changes committed (local only — push needs workflow PAT scope).
+- Implemented mapDomain (port/domain.go), ToUnicode/ToASCII (port/punycode.go)
+- Created testdata_test.go as single source of truth for all 46 JS fixtures
+- Added punycode_test.go with TestToUnicodeDescribe + TestToASCIIDescribe
+- Added wrappers_test.go for ToUnicode/ToASCII tests
+- Refactored decode_test.go, encode_test.go, ucs2_test.go to use consolidated fixtures
+- Added .github/workflows/go.yml CI workflow (Go 1.22)
+- Files changed: 12 files, 638 insertions, 155 deletions
+- **Brief description:**
+  - All 46 JS fixtures assert in Go test suite
+  - All three error paths (ErrNotBasic, ErrInvalidInput, ErrOverflow) covered
+  - go build ./port/... && go test ./port/... && go vet ./port/... all green
+  - Note: push needs 'workflow' scope on GitHub PAT for go.yml
+---
