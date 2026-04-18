@@ -151,7 +151,7 @@ The first invocation of `./ds` builds the sandbox image (~2 min, one time). Ever
 Ralph reads every test file, fans out one subagent per file, writes one Markdown spec per test file. Output lands in `specs/tests/`.
 
 ```bash
-./ds ./ralph/ralph plan --goal "study every file in tests/* using separate subagents and document in /specs/*.md and link the implementation as citations in the specification"
+./ds ./ralph/ralph plan --goal "study every file in tests/* using separate subagents and document in /specs/*.md and link the implementation as citations in the specification (flat structure)"
 ```
 
 - Plan mode runs a single iteration by default — enough to produce the spec bundle in one pass.
@@ -165,7 +165,7 @@ Ralph reads every test file, fans out one subagent per file, writes one Markdown
 ## Stage 2 — Source → specs with citations (≈ 10–30 min)
 
 ```bash
-./ds ./ralph/ralph plan --goal "study every file in src/* using seperate subagents per file and link the implementation as citations in the specification"
+./ds ./ralph/ralph plan --goal "study every file in src/* using seperate subagents per file and link the implementation as citations in the specification (flat structure)"
 ```
 
 **Checkpoint**: open `specs/impl/punycode.md`. It should read like the RFC 3492 algorithm description, with line citations — not like JavaScript with comments.
