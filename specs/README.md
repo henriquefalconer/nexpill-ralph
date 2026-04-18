@@ -2,7 +2,7 @@
 
 This directory is the language-agnostic specification of `punycode.js`, derived from `tests/tests.js` (test-driven specs) and from the source files themselves (source-driven specs). Every claim is cited back to the test file or the reference implementation. It is the source-of-truth for the Go port at `port/` (see `TARGET.md`).
 
-All files live at the top level here — the directory is intentionally flat. Test-driven specs map 1:1 to a Mocha `describe` block in `tests/tests.js`. Source-driven specs map 1:1 to a file under the project's source tree (there is no literal `src/` directory — the library file sits at project root).
+All files live at the top level here — the directory is intentionally flat. Test-driven specs map 1:1 to a Mocha `describe` block in `tests/tests.js`. Source-driven specs map 1:1 to a `.js` file under the project's source tree — `punycode.js` (root), `scripts/prepublish.js`, and `tests/tests.js`. There is no literal `src/` directory; the library file sits at project root.
 
 ## Test-driven index
 
@@ -26,6 +26,7 @@ One spec per source file, studied line-by-line with citations back into the file
 |---|---|---|---|
 | [src-punycode.md](./src-punycode.md) | `punycode.js` | `1-443` | Library — constants, helpers, UCS-2 layer, Bootstring primitives, `decode`/`encode`, `toUnicode`/`toASCII`, public API object |
 | [src-scripts-prepublish.md](./src-scripts-prepublish.md) | `scripts/prepublish.js` | `1-17` | Build step that regex-rewrites `punycode.js` into the generated ES-module variant `punycode.es6.js` |
+| [src-tests-tests.md](./src-tests-tests.md) | `tests/tests.js` | `1-372` | Mocha test suite — `testData` fixture object (four buckets) and six top-level `describe` blocks (one per public API entry point) |
 
 ## How the specs are written
 
@@ -42,7 +43,8 @@ One spec per source file, studied line-by-line with citations back into the file
 3. `punycode-ucs2-decode.md` + `punycode-ucs2-encode.md` — the UCS-2/UTF-16 primitives, most sensitive to language choice (Go strings are UTF-8).
 4. `punycode-decode.md` + `punycode-encode.md` — the Bootstring core per RFC 3492.
 5. `punycode-to-unicode.md` + `punycode-to-ascii.md` — the domain/email wrappers, including IDNA2003 separator normalisation.
-6. `src-scripts-prepublish.md` — reference only; the build script is JS-only and out of port scope.
+6. `src-tests-tests.md` — read once before translating the test suite; documents the fixture-table layout, the two `describe`-block patterns, and the test-vs-implementation cross-reference table.
+7. `src-scripts-prepublish.md` — reference only; the build script is JS-only and out of port scope.
 
 ## Scope boundaries
 
