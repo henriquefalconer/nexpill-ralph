@@ -139,7 +139,6 @@ Everything happens inside a Docker sandbox — both the first `claude` to login 
 ./ds                           ≡  docker sandbox run  claude .        # create/open sandbox + interactive claude
 ./ds ./ralph/ralph plan --goal …  ≡  docker sandbox exec … ./ralph/ralph plan --goal …
 ./ds ./ralph/ralph             ≡  docker sandbox exec … ./ralph/ralph
-./ds go test ./port/...        ≡  docker sandbox exec … go test ./port/...   # any command works
 ```
 
 The first invocation of `./ds` builds the sandbox image (~2 min, one time). Every call after that reuses the cached image. Why sandbox at all: Ralph passes `--dangerously-skip-permissions` to Claude Code, giving the agent full filesystem access — the sandbox confines that access to the repo directory plus the mounts.
