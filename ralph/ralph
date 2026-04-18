@@ -125,16 +125,27 @@ done
 set -- "${POSITIONAL[@]:-}"
 
 # ────────────────────────────────────────────────
-# Kill mode: SIGINT every running claude process and exit.
-# No prompt file, no loop, no branch checks — just a panic button.
+# Kill mode: SIGINT every running claude process, then SIGTERM every other
+# ralph invocation. No prompt file, no loop, no branch checks — just a
+# panic button. Excludes this process (and its parent shell) so we don't
+# kill ourselves before the claude signal propagates.
 # ────────────────────────────────────────────────
 
 if [ "${1:-}" = "kill" ]; then
-    echo -e "${YELLOW_BOLD}Sending SIGINT to all claude processes...${RESET}"
+    echo -e "Sending SIGINT to all claude processes..."
     if pkill -INT -f claude; then
-        echo -e "${GREEN_BOLD}Signal delivered.${RESET}"
+        echo -e "Signal delivered."
     else
-        echo -e "${YELLOW_BOLD}No matching claude processes found.${RESET}"
+        echo -e "No matching claude processes found."
+    fi
+    sleep 1
+    echo -e "Sending SIGTERM to other ralph invocations..."
+    others=$(pgrep -f '[/ ]ralph( |$)' | grep -vx "$$" || true)
+    if [ -n "$others" ]; then
+        echo "$others" | xargs kill -TERM 2>/dev/null || true
+        echo -e "Signal delivered."
+    else
+        echo -e "No other ralph invocations found."
     fi
     exit 0
 fi

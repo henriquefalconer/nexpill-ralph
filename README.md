@@ -160,7 +160,7 @@ And now, to do the conversion, run this in your project directory:
 
 Whenever Ralph emits `<promise>COMPLETE</promise>` or `<promise>NEXT</promise>`, it means the current iteration has finished and the following is about to start.
 
-After all the iterations have finished, the project should have been ported to Go, and it should include tests and functionality from original code, working and tested by Ralph. Check for all of those to validate it worked.
+After all the iterations have finished, the project should have been ported to Go, and it should include tests and functionality from original code, working and tested by Ralph. Check for all of those to validate functionality.
 
 Happy Ralphing.
 
