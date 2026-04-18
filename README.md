@@ -198,6 +198,15 @@ When Ralph emits `<promise>COMPLETE</promise>`, it thinks it has finished. Check
 
 The code should have been ported to Go, including tests and functionality that accompanied it.
 
+
+### Extra - Run Whole Command
+
+And, if you want to run it all in one-go, here's what to run:
+
+```bash
+./ds ./ralph/ralph plan --goal "study every file in tests/* using separate subagents and document in /specs/*.md and link the implementation as citations in the specification (flat structure)" && ./ds ./ralph/ralph plan --goal "study every file in src/* using seperate subagents per file and link the implementation as citations in the specification (flat structure)" && ./ds ./ralph/ralph plan --goal "okay i want you to come up with a plan that implements the specs/*.md and porting it to Go, that we will use for a claude code sessions - separetely to this. it's important to cite line numbers of specifications and the source code that will be affected. search all the code as needed using up to 10 claude then write the ralph/todo.md as bullet points" && ./ds ./ralph/ralph
+```
+
 ---
 
 ## Attribution
