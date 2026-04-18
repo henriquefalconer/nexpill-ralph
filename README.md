@@ -131,38 +131,6 @@ Now cache it inside the sandbox. The first `git push` triggers the username/pass
 
 Credentials land in the sandbox's `~/.git-credentials` and persist across `./ds` calls.
 
-### 4. Personal branch
-
-Everyone runs in parallel; nobody shares a branch.
-
-```bash
-git checkout -b workshop/<your-name>
-git push -u origin workshop/<your-name>
-```
-
-Ralph's auto-push runs against whatever branch you're on when you invoke `./ds`, so Stages 1–4 land on `workshop/<your-name>`. At the end you can `git diff main..workshop/<your-name>` to see exactly what Ralph produced.
-
-Your tree already looks like:
-
-```
-nexpill-ralph/
-├── ralph/               # Ralph tooling — don't touch
-├── ds                   # sandboxed ralph wrapper (builds its own image)
-├── punycode.js          # vendored source
-├── tests/tests.js       # vendored tests
-├── scripts/             # vendored (npm publish tooling — not relevant to port)
-├── package.json         # vendored npm metadata
-├── LICENSE-MIT.txt      # vendored license (MIT)
-├── SOURCE-README.md     # punycode.js's original README
-├── .editorconfig        # vendored
-├── .gitattributes       # vendored
-├── .gitignore           # vendored
-├── .github/             # vendored (source repo's CI, ignore)
-├── .nvmrc               # vendored
-├── TARGET.md            # port target spec
-└── README.md            # this file
-```
-
 ### The Docker sandbox, and `./ds`
 
 Everything happens inside a Docker sandbox — both the first `claude` to login and every ralph invocation.
@@ -177,8 +145,6 @@ Everything happens inside a Docker sandbox — both the first `claude` to login 
 ```
 
 The first invocation of `./ds` builds the sandbox image (~2 min, one time). Every call after that reuses the cached image. Why sandbox at all: Ralph passes `--dangerously-skip-permissions` to Claude Code, giving the agent full filesystem access — the sandbox confines that access to the repo directory plus the mounts.
-
-The script is intentionally language-agnostic — no `npm run`, no `make`, no new tool to install.
 
 ---
 
