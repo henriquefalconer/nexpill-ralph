@@ -9,12 +9,11 @@ You are in PLAN MODE. The ULTIMATE GOAL at the bottom of this prompt tells you *
    - Which outputs satisfy the goal and where they belong on disk.
    - The right granularity — one spec per logical unit (test file, source module, feature) is usually correct.
    - Dependencies between outputs — write primitives before composites.
-   Use up to 1 Sonnet subagent for independent reads. Use Opus subagents for synthesis when the task requires reconciling findings across files.
+   Use multiple Sonnet subagents for independent reads. Use Opus subagents for synthesis when the task requires reconciling findings across files.
 
 2. Default spec-writing rules (apply unless the goal overrides them):
    - One markdown file per logical unit.
-   - Every claim cites its source with `path:line` so future readers can `file_read` the original without guessing.
-   - Prose is language-agnostic — describe behavior, not the source language's syntax. This matters when specs will be re-implemented in another language.
+   - Every claim cites its source with `path:line`.
    - Describe *what* the system does and *must* do. Describe *how* only when the goal asks for it.
 
 3. `ralph/todo.md` format (when the goal is to produce or update it):
