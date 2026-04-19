@@ -14,7 +14,7 @@ PART 2
 
 You MUST append progress updates to ralph/progress.txt at the exact moments described below. This file is tailed live in the terminal — it is the ONLY way the user sees what is happening. Use `echo "..." >> ralph/progress.txt` (append, not overwrite).
 
-Most importantly, the first thing you should do is append:
+Most importantly, the first thing you should do is append (iteration number should be exactly "[ralph-iteration]"):
 ```
 ═══════════════════════════════════════════════════════
   Ralph Iteration [ralph-iteration]

@@ -8,6 +8,7 @@ HARD STOP: Implement exactly ONE commit per invocation. When the commit lands, a
 3. After implementing functionality or resolving problems, run the tests for that unit of code that was improved. If functionality is missing then it's your job to add it as per the application specifications. Ultrathink.
 4. When you discover issues, immediately update @ralph/todo.md with your findings using a subagent. When resolved, update and remove the item.
 5. When the tests pass, update @ralph/todo.md, then commit absolutely everything with a message describing the changes. After the commit, `git push`.
+6. Do not write "Iteration NN" anywhere in @ralph/todo.md.
 
 9999. Important: You can study the specifications and follow the citations to reference source code.
 99999. Important: When authoring documentation, capture the why — tests and implementation importance.
@@ -27,7 +28,7 @@ HARD STOP: Implement exactly ONE commit per invocation. When the commit lands, a
 
 You MUST append progress updates to ralph/progress.txt at the exact moments described below. This file is tailed live in the terminal — it is the ONLY way the user sees what is happening. Use `echo "..." >> ralph/progress.txt` (append, not overwrite).
 
-Most importantly, the first thing you should do is append:
+Most importantly, the first thing you should do is append (iteration number should be exactly "[ralph-iteration]"):
 ```
 ═══════════════════════════════════════════════════════
   Ralph Iteration [ralph-iteration]

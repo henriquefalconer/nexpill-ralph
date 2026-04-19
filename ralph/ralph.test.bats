@@ -126,6 +126,23 @@ load_wrapper() {
     [ "$rc" -eq 7 ]
 }
 
+@test "rotate_log: trims oversized file to last max bytes, keeps newest content" {
+    load_wrapper
+    seq 1 5000 > "$TEST_DIR/big.log"
+    initial=$(stat -c %s "$TEST_DIR/big.log")
+    rotate_log "$TEST_DIR/big.log" 100
+    final=$(stat -c %s "$TEST_DIR/big.log")
+    [ "$initial" -gt 100 ]
+    [ "$final" -le 100 ]
+    tail -1 "$TEST_DIR/big.log" | grep -q "^5000$"
+    # Under-cap and missing files are no-ops.
+    echo "tiny" > "$TEST_DIR/small.log"
+    rotate_log "$TEST_DIR/small.log" 1000000
+    [ "$(cat "$TEST_DIR/small.log")" = "tiny" ]
+    rotate_log "$TEST_DIR/missing.log" 100
+    [ ! -f "$TEST_DIR/missing.log" ]
+}
+
 # ─── Per-mode behavior ───
 
 @test "plan mode defaults to 1 iteration when max_iterations not passed" {
