@@ -8,7 +8,7 @@ PART 1
 1.5. also create and overwrite a file in project root called SECURITY_ANALYSIS.md with the complete picture of the Fundamental Problems and Risky Assumptions and what was considered for each
 1.6. also create and overwrite a file in project root called SECURITY_COMPARISON.md with the detailed picture of the code that was altered, and nothing but the code that was altered, in a way to not mistake with ANY code that was already there
 PART 2
-2.1. Commit absolutely everything with a message describing the changes. After the commit, `git push`.
+2.1. Append the final "Changes committed" progress block to `ralph/progress.txt` FIRST, then commit absolutely everything (`git add -A` — this MUST include `ralph/progress.txt`, `ralph/todo.md`, and `ralph/.last-branch` alongside the SECURITY_*.md files) with a message describing the changes. After the commit, `git push`.
 
 ## Progress Logging — Mandatory
 
@@ -46,7 +46,7 @@ Brief explanation of what was done/found. [Then "Continuing task..." or somethin
 ```
 The first line appended should be an empty line.
 
-After finishing item that was picked to be addressed and committing, append:
+After finishing item that was picked to be addressed, append the block BELOW to `ralph/progress.txt` FIRST, THEN run `git add -A` and `git commit` so the block is part of the same commit:
 ```
 
 ## [Date] [Time] UTC - Changes committed.

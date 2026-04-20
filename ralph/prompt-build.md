@@ -1,14 +1,16 @@
-HARD STOP: Implement exactly ONE commit per invocation. When the commit lands, append the final progress block, output a single promise (`<promise>NEXT</promise>` if @ralph/todo.md still has pending items, `<promise>COMPLETE</promise>` if it has ZERO pending items), and stop. Do NOT continue past the first commit. The next loop iteration will pick up remaining work.
+HARD STOP: one iteration = one forward step against @ralph/todo.md. A step is complete when the chosen item is resolved in code and the verification protocol defined in @ralph/todo.md reports green on the pushed main tip. When the step is closed, append the final progress block, emit a single promise (`<promise>NEXT</promise>` if @ralph/todo.md still has pending items, `<promise>COMPLETE</promise>` if it has zero pending items), and stop.
 
 0a. Study `specs/*` with multiple Sonnet subagents to learn the application specifications.
 0b. Study @ralph/todo.md.
 
-1. Your task is to implement functionality per the specifications and @ralph/todo.md file using parallel subagents. Follow @ralph/todo.md and choose the most important item to address. Before making changes, search the codebase (don't assume not implemented) using Sonnet subagents. You may use multiple Sonnet subagents for searches/reads and only 1 Sonnet subagent for build/tests. Use Opus subagents when complex reasoning is needed (debugging, architectural decisions).
-2. Author property based tests or unit tests (which ever is best).
-3. After implementing functionality or resolving problems, run the tests for that unit of code that was improved. If functionality is missing then it's your job to add it as per the application specifications. Ultrathink.
-4. When you discover issues, immediately update @ralph/todo.md with your findings using a subagent. When resolved, update and remove the item.
-5. When the tests pass, update @ralph/todo.md, then commit absolutely everything with a message describing the changes. After the commit, `git push`.
-6. Do not write "Iteration NN" anywhere in @ralph/todo.md.
+1. Pick the most important item to address from @ralph/todo.md. Before making changes, search the codebase with Sonnet subagents (don't assume something is not implemented). Use multiple Sonnet subagents for searches/reads and a single Sonnet subagent for build/tests. Use Opus subagents for complex reasoning (debugging, architectural decisions).
+2. Author property-based or unit tests, whichever is best.
+3. Run the tests for the unit of code that was changed. If functionality is missing, add it per the specifications. Ultrathink.
+4. When you discover issues, update @ralph/todo.md with your findings using a subagent. Remove items when resolved.
+5. Before committing, run any pre-push validation @ralph/todo.md defines. Iterate on root causes until it is green. Do not bypass hooks or weaken the commands.
+6. Append the "Changes committed" progress block to `ralph/progress.txt` first, then commit absolutely everything (`git add -A`, including `ralph/progress.txt`, `ralph/todo.md`, and `ralph/.last-branch` alongside your code changes) with a message describing the changes. `git push`.
+7. Verify the push against @ralph/todo.md's post-push verification protocol. If it reports a failure (deploy broke, regression, the fix did not take), keep iterating in this invocation (more commits allowed, still the same step). If it reports cannot-complete (upstream unreachable, ambiguous signal), record what you observed in @ralph/todo.md and emit `<promise>NEXT</promise>`. Only emit a promise once verification has resolved for this iteration.
+8. Do not write "Iteration NN" anywhere in @ralph/todo.md.
 
 9999. Important: You can study the specifications and follow the citations to reference source code.
 99999. Important: When authoring documentation, capture the why — tests and implementation importance.
@@ -22,7 +24,7 @@ HARD STOP: Implement exactly ONE commit per invocation. When the commit lands, a
 9999999999999. If you find inconsistencies in the specs/* then use an Opus 4.6 subagent with 'ultrathink' requested to update the specs.
 99999999999999. IMPORTANT: Keep @CLAUDE.md operational only — status updates and progress notes belong in @ralph/todo.md. A bloated CLAUDE.md pollutes every future loop's context.
 999999999999999. NEVER emit a single Write over 400 lines. For larger files, create a ≤400-line skeleton with Write, then grow it with Edits. Placeholders are forbidden.
-9999999999999999. DONE: emit `<promise>COMPLETE</promise>` ONLY when @ralph/todo.md has ZERO pending items. Re-read @ralph/todo.md to verify before choosing between `<promise>NEXT</promise>` and `<promise>COMPLETE</promise>`. Finishing this iteration's task is NOT agent complete; it is a NEXT.
+9999999999999999. DONE: emit `<promise>COMPLETE</promise>` only when @ralph/todo.md has zero pending items and the iteration's post-push verification returned green. Re-read @ralph/todo.md before choosing between `<promise>NEXT</promise>` and `<promise>COMPLETE</promise>`. Finishing a task without verification is not complete; it is a NEXT.
 
 ## Progress Logging — Mandatory
 
@@ -60,7 +62,7 @@ Brief explanation of what was done/found. [Then "Continuing task..." or somethin
 ```
 The first line appended should be an empty line.
 
-After finishing item that was picked to be addressed and committing, append:
+After finishing item that was picked to be addressed, append the block BELOW to `ralph/progress.txt` FIRST, THEN run `git add -A` and `git commit` so the block is part of the same commit:
 ```
 
 ## [Date] [Time] UTC - Changes committed.
@@ -76,9 +78,9 @@ The first line appended should be an empty line.
 
 ## Stop Condition
 
-After your ONE commit lands and the final progress block is appended, reply with ONLY ONE of:
+After the post-push verification has resolved (green, red-but-worked-through, or cannot-complete) and the final progress block is appended and the commit is done with everything included, reply with one of:
 
-- `<promise>NEXT</promise>` if @ralph/todo.md still has pending items. The outer loop will start a fresh iteration.
-- `<promise>COMPLETE</promise>` if @ralph/todo.md has ZERO pending items (verify by re-reading). The outer loop will exit.
+- `<promise>NEXT</promise>` if @ralph/todo.md still has pending items, or if verification reported cannot-complete. The outer loop will start a fresh iteration.
+- `<promise>COMPLETE</promise>` if @ralph/todo.md has zero pending items (verify by re-reading) and verification returned green. The outer loop will exit.
 
-Do NOT perform any additional work or verification after this signal.
+Do not perform any additional work after the promise. All verification happens before the promise, not after.

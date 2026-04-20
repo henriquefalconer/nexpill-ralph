@@ -325,11 +325,6 @@ while true; do
     # Extract promise signal (NEXT or COMPLETE) from claude's reply.
     PROMISE=$(echo "$OUTPUT" | grep -oE "<promise>(NEXT|COMPLETE)</promise>" | tail -1 || true)
     if [ -z "$PROMISE" ]; then
-        # Commit anything written to progress.txt before the failure so the
-        # working tree stays clean whether we retry or bail out.
-        git add ralph/.last-branch ralph/progress.txt ralph/todo.md 2>/dev/null || true
-        git commit -m "commit progress.txt, .last-branch and todo.md files (aborted iter $CURRENT_ITER)" >/dev/null 2>&1 || true
-
         # Parse the final stream-json result frame for an Anthropic API error
         # code + message. Successful iterations emit "api_error_status":null
         # (regex misses, $API_ERR stays empty); transient failures (401/429/
@@ -366,10 +361,6 @@ while true; do
     API_RETRIES_USED=0
 
     printf '\n%s\n' "$PROMISE" >> "$PROGRESS_FILE"
-
-    # Commit remaining progress.txt, .last-branch and todo.md files
-    git add ralph/.last-branch ralph/progress.txt ralph/todo.md
-    git commit -m "commit progress.txt, .last-branch and todo.md files" >/dev/null 2>&1 || true
 
     # Push changes after each iteration (non-fatal if it fails)
     git -C "$REPO_ROOT" push origin "$CURRENT_BRANCH" 2>/dev/null || \

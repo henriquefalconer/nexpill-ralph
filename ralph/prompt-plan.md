@@ -22,7 +22,7 @@ You are in PLAN MODE. The ULTIMATE GOAL at the bottom of this prompt tells you *
    - Order respects dependencies.
    - Keep it lean — prune completed items and historical details that don't inform future work. Specs are the durable baseline.
 
-IMPORTANT: Plan only — do NOT implement. Before claiming something is missing, search for it first. Commit everything when finished writing plan.
+IMPORTANT: Plan only — do NOT implement. Before claiming something is missing, search for it first. When finished writing the plan, append the final "Changes committed" progress block to `ralph/progress.txt` FIRST, then commit everything (`git add -A` — this MUST include `ralph/progress.txt`, `ralph/todo.md`, and `ralph/.last-branch` alongside spec changes). After the commit, `git push`.
 
 ULTIMATE GOAL: [project-specific goal]
 
@@ -62,7 +62,7 @@ Brief explanation of what was done/found. [Then "Continuing task..." or somethin
 ```
 The first line appended should be an empty line.
 
-After finishing item that was picked to be addressed and committing, append:
+After finishing item that was picked to be addressed, append the block BELOW to `ralph/progress.txt` FIRST, THEN run `git add -A` and `git commit` so the block is part of the same commit:
 ```
 
 ## [Date] [Time] UTC - Changes committed.
