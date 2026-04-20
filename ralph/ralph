@@ -29,6 +29,8 @@ LOG_FILE="$SCRIPT_DIR/ralph.log"
 ITERATION_TIMEOUT="${ITERATION_TIMEOUT:-1800}"  # 30min of ralph/progress.txt idle time (override via env)
 WATCHDOG_POLL_INTERVAL="${WATCHDOG_POLL_INTERVAL:-5}"  # how often the stall watchdog checks mtime
 LOG_MAX_BYTES="${LOG_MAX_BYTES:-$((5 * 1024 * 1024 * 1024))}"  # 5 GiB cap on ralph.log (override via env)
+API_ERROR_MAX_RETRIES="${API_ERROR_MAX_RETRIES:-3}"       # per-iteration retry budget for transient API errors (401/429/5xx)
+API_ERROR_BACKOFF_SECONDS="${API_ERROR_BACKOFF_SECONDS:-60}"  # sleep between API-error retries
 TAIL_PID=""
 
 cleanup() {
@@ -256,6 +258,7 @@ fi
 # ────────────────────────────────────────────────
 
 ITERATION=0
+API_RETRIES_USED=0
 
 while true; do
     if [ "$MAX_ITERATIONS" -gt 0 ] && [ "$ITERATION" -ge "$MAX_ITERATIONS" ]; then
@@ -319,24 +322,61 @@ while true; do
         exit 1
     fi
 
-    # Check for a promise signal (NEXT or COMPLETE).
-    if ! echo "$OUTPUT" | grep -qE "<promise>(NEXT|COMPLETE)</promise>"; then
+    # Extract promise signal (NEXT or COMPLETE) from claude's reply.
+    PROMISE=$(echo "$OUTPUT" | grep -oE "<promise>(NEXT|COMPLETE)</promise>" | tail -1 || true)
+    if [ -z "$PROMISE" ]; then
+        # Commit anything written to progress.txt before the failure so the
+        # working tree stays clean whether we retry or bail out.
+        git add ralph/.last-branch ralph/progress.txt ralph/todo.md 2>/dev/null || true
+        git commit -m "commit progress.txt, .last-branch and todo.md files (aborted iter $CURRENT_ITER)" >/dev/null 2>&1 || true
+
+        # Parse the final stream-json result frame for an Anthropic API error
+        # code + message. Successful iterations emit "api_error_status":null
+        # (regex misses, $API_ERR stays empty); transient failures (401/429/
+        # 5xx) emit a numeric code we can retry on. See ralph/ralph.log
+        # iteration 16 for the canonical failure shape.
+        RESULT_LINE=$(echo "$OUTPUT" | grep '"type":"result"' | tail -1 || true)
+        API_ERR=$(echo "$RESULT_LINE" | grep -oE '"api_error_status":[0-9]+' | grep -oE '[0-9]+$' || true)
+        API_ERR_MSG=$(echo "$RESULT_LINE" | sed -n 's/.*"result":"\(.*\)","stop_reason":.*/\1/p' | sed 's/\\"/"/g')
+
+        if [ -n "$API_ERR" ]; then
+            echo ""
+            echo "Anthropic API error $API_ERR:"
+            if [ -n "$API_ERR_MSG" ]; then echo "  $API_ERR_MSG"; fi
+        fi
+
+        if [ -n "$API_ERR" ] && [ "$API_ERROR_MAX_RETRIES" -gt 0 ] && [ "$API_RETRIES_USED" -lt "$API_ERROR_MAX_RETRIES" ]; then
+            API_RETRIES_USED=$((API_RETRIES_USED + 1))
+            echo "Ralph iteration $CURRENT_ITER: retry $API_RETRIES_USED/$API_ERROR_MAX_RETRIES after ${API_ERROR_BACKOFF_SECONDS}s."
+            sleep "$API_ERROR_BACKOFF_SECONDS"
+            continue   # retry the same iteration slot
+        fi
+
         echo ""
-        echo "Ralph finished without completing all tasks."
+        if [ -n "$API_ERR" ]; then
+            echo "Ralph iteration $CURRENT_ITER aborted after $API_RETRIES_USED API-error retries."
+        else
+            echo "Ralph finished without completing all tasks."
+        fi
         echo "Check $PROGRESS_FILE for status."
         exit 1
     fi
 
-    # Commit remaining progress.txt and .last-branch files
-    git add ralph/.last-branch ralph/progress.txt
-    git commit -m "commit progress.txt and .last-branch files" >/dev/null 2>&1 || true
+    # Valid promise landed, clear the per-slot retry budget for the next iter.
+    API_RETRIES_USED=0
+
+    printf '\n%s\n' "$PROMISE" >> "$PROGRESS_FILE"
+
+    # Commit remaining progress.txt, .last-branch and todo.md files
+    git add ralph/.last-branch ralph/progress.txt ralph/todo.md
+    git commit -m "commit progress.txt, .last-branch and todo.md files" >/dev/null 2>&1 || true
 
     # Push changes after each iteration (non-fatal if it fails)
     git -C "$REPO_ROOT" push origin "$CURRENT_BRANCH" 2>/dev/null || \
         git -C "$REPO_ROOT" push -u origin "$CURRENT_BRANCH" 2>/dev/null || true
 
     # Completion check: <promise>COMPLETE</promise> ends the loop.
-    if echo "$OUTPUT" | grep -q "<promise>COMPLETE</promise>"; then
+    if [ "$PROMISE" = "<promise>COMPLETE</promise>" ]; then
         echo ""
         echo "Ralph signaled completion at iteration $CURRENT_ITER."
         sleep 1

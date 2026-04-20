@@ -2,8 +2,8 @@
 #
 # Integration tests for ralph/ralph.
 #
-# Run with:   bats ralph/ralph.test.bats
-# Install:    sudo apt install bats   # or: brew install bats-core
+# Usage: `bats ralph/ralph.test.bats` (time to run ~2m40s)
+# Install: sudo apt install bats   # or: brew install bats-core
 #
 # Strategy:
 #   Each test spins up a fresh temp dir containing a git repo, a copy of
@@ -69,6 +69,42 @@ echo "<promise>COMPLETE</promise>"'
     [ "$status" -ne 0 ]
     [[ "$output" == *"finished without completing"* ]]
     [[ "$output" != *"timed out"* ]]
+}
+
+# Regression test for the iteration-16 scenario: claude's stream-json result
+# frame has api_error_status set (401) and no <promise> tag because the API
+# killed the session before the model could emit it. Ralph must detect the
+# error code, print the human-readable message Anthropic sent, and retry the
+# iteration slot instead of giving up.
+@test "retries the iteration when Anthropic returns an api_error_status (401)" {
+    stub_claude '
+counter="'"$TEST_DIR"'/counter"
+n=$(cat "$counter" 2>/dev/null || echo 0)
+n=$((n+1))
+echo "$n" > "$counter"
+if [ "$n" -eq 1 ]; then
+    # Shape mirrors ralph/ralph.log iteration 16 line 6514.
+    echo "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":true,\"api_error_status\":401,\"result\":\"Failed to authenticate. API Error: 401 {\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"authentication_error\\\",\\\"message\\\":\\\"Invalid authentication credentials\\\"}}\",\"stop_reason\":\"stop_sequence\"}"
+    exit 0
+fi
+echo "<promise>COMPLETE</promise>"'
+    API_ERROR_MAX_RETRIES=2 API_ERROR_BACKOFF_SECONDS=0 run ralph/ralph 1
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Anthropic API error 401"* ]]
+    [[ "$output" == *"Invalid authentication credentials"* ]]
+    [[ "$output" == *"retry 1/2"* ]]
+    [[ "$output" == *"signaled completion"* ]]
+    [[ "$output" != *"finished without completing"* ]]
+}
+
+@test "exhausting API-error retry budget exits with a clear final message" {
+    stub_claude '
+echo "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":true,\"api_error_status\":401,\"result\":\"Failed to authenticate. API Error: 401 {\\\"error\\\":{\\\"message\\\":\\\"Invalid authentication credentials\\\"}}\",\"stop_reason\":\"stop_sequence\"}"'
+    API_ERROR_MAX_RETRIES=1 API_ERROR_BACKOFF_SECONDS=0 run ralph/ralph 1
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Anthropic API error 401"* ]]
+    [[ "$output" == *"Invalid authentication credentials"* ]]
+    [[ "$output" == *"aborted after 1 API-error retries"* ]]
 }
 
 @test "exits 0 when claude emits <promise>COMPLETE</promise>" {
