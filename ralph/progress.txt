@@ -203,3 +203,26 @@ Push attempt failed again — GitHub PAT still lacks workflow scope. Committing 
   - Updated todo.md noting push is still blocked as of iteration 10
   - Documented that go.yml exists locally and is correct, but GitHub rejects push without workflow scope
 ---
+
+<promise>NEXT</promise>
+═══════════════════════════════════════════════════════
+  Ralph Iteration 11
+═══════════════════════════════════════════════════════
+
+Finding most important item to address from todo.md...
+
+Chose CI workflow push, it's the last blocker for a fully verified iteration.
+
+All local verification passes: go build, go vet, go test green. Attempting to push .github/workflows/go.yml to GitHub...
+
+Push failed again — PAT still lacks workflow scope. Soft-resetting to separate workflow file from progress update, then pushing the rest...
+
+## 2026-04-21T00:00:00 UTC - Changes committed.
+- Iteration 11: Attempted CI workflow push; still blocked by PAT lacking workflow scope
+- Files changed: ralph/progress.txt (workflow file left untracked — cannot be pushed)
+- **Brief description of changes:**
+  - Local verification: go build ./..., go vet ./..., go test ./... all green (cached)
+  - .github/workflows/go.yml exists locally but cannot be pushed (PAT needs workflow scope)
+  - All 14 port items remain complete; CI push is the only external blocker
+  - Committing progress update only; workflow file excluded to allow successful push
+---
