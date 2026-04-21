@@ -1,0 +1,16 @@
+═══════════════════════════════════════════════════════
+  Ralph Iteration 1
+═══════════════════════════════════════════════════════
+
+Finding most important item to address: studying tests/* and documenting in /specs/*.md...
+
+Chose: decompose tests/tests.js into 7 spec files — one per describe block plus shared test vectors. Will dispatch subagents in parallel.
+
+## 2026-04-21 00:02 UTC - Changes committed.
+- Documented tests/tests.js into 7 per-logical-unit specs in specs/
+- Files changed: specs/test-vectors.md, specs/test-ucs2-decode.md, specs/test-ucs2-encode.md, specs/test-decode.md, specs/test-encode.md, specs/test-toUnicode.md, specs/test-toASCII.md, ralph/progress.txt, ralph/.last-branch
+- **Brief description of changes:**
+  - Dispatched 7 parallel Sonnet subagents — one each for the four testData categories (strings/ucs2/domains/separators combined into test-vectors.md) and the six describe blocks (ucs2.decode, ucs2.encode, decode, encode, toUnicode, toASCII).
+  - Every factual claim in every spec cites tests/tests.js:LINE and, where relevant, punycode.js:LINE.
+  - Flat structure under specs/, no subdirectories, ready for stage 2 (source→specs) to add sibling files.
+---
