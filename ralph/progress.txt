@@ -78,3 +78,22 @@ All 37 tests pass (go build, go vet, go test all green). Committing...
   - decode_test.go: 24 pass vectors from testData.strings, uppercase case-insensitivity test, 3 error subtests
   - todo.md: marked item 7 complete, noted JS \xNN vs Go \u00NN, corrected vector count (24 not 23), corrected \x81 error type
 ---
+
+<promise>NEXT</promise>
+═══════════════════════════════════════════════════════
+  Ralph Iteration 5
+═══════════════════════════════════════════════════════
+
+Finding most important item to address from todo.md...
+
+Chose item 8: Port Encode + tests, the next unchecked item in todo.md.
+
+Implemented Encode in encode.go and encode_test.go. All 24 vectors pass. Build and vet green.
+
+## 2026-04-21T00:00:00 UTC - Changes committed.
+- Implemented punycode.Encode (item 8)
+- Files changed: punycode/encode.go, punycode/encode_test.go
+- **Brief description of changes:**
+  - encode.go: full RFC 3492 §6.3 encoder — UCS2Decode input, emit basic code points, delimiter, then VLQ main loop with two overflow guards
+  - encode_test.go: 24 parameterized vectors (reusing decodeVectors) covering ASCII, non-ASCII, mixed-script, RFC 3492 samples, and ASCII edge case
+---

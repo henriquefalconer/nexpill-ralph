@@ -69,7 +69,7 @@ Dependency-ordered build queue. One bullet ≈ one Ralph build iteration ≈ one
   - Implemented in `decode.go`; 24 pass vectors (testData.strings has 24, not 23 as spec states), `decode("ZZZ") == "\u7BA5"`, three error subtests.
   - Note: JS `'\xNN'` (NN >= 0x80) = U+00NN; Go test vectors must use `\u00NN`, not `\xNN` (raw byte). `"\x81"` → `ErrInvalidInput` (not ErrOverflow — the JS test description is misleading but the actual thrown error is 'invalid-input').
 
-- [ ] **8. Port `Encode` + tests**
+- [x] **8. Port `Encode` + tests**
   - Source: `punycode.js:290-376`
   - Specs: `specs/src-encode.md:1-286`, `specs/test-encode.md:18-136` (23 vectors — same fixture as Decode)
   - Create `encode.go`: `func Encode(input string) (string, error)`.
