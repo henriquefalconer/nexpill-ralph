@@ -24,9 +24,10 @@ All 14 items complete. Port is finished.
   - `go build ./...`, `go test ./...`, `go vet ./...` all pass green (`go test -race` skipped — cgo/gcc absent in sandbox).
   - Vector counts verified: Strings=24, UCS2=7, Domains=10, Separators=4 — all match spec.
   - `.github/workflows/go.yml` created locally (runs `go build ./...`, `go vet ./...`, `go test ./...` on push/PR using go 1.22) but **push to GitHub was blocked** — the GitHub PAT lacks `workflow` scope, which is required to push files under `.github/workflows/`.
-  - **Action required to complete CI setup (choose one):**
+  - **Action required to complete CI setup (choose one) — STILL BLOCKED as of iteration 10:**
     - **(a)** Add `workflow` scope to the GitHub PAT and re-push the branch, or
     - **(b)** Push `.github/workflows/go.yml` manually (e.g. via the GitHub web UI or a PAT with the correct scope).
+  - `.github/workflows/go.yml` exists locally and is correct; every push attempt is rejected by GitHub with "refusing to allow a Personal Access Token to create or update workflow … without `workflow` scope".
 
 ## Out of scope (intentionally skipped)
 
