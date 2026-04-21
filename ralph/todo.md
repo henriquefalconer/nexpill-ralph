@@ -64,15 +64,10 @@ Dependency-ordered build queue. One bullet ≈ one Ralph build iteration ≈ one
 
 ### Core codec (depends on helpers + UCS-2)
 
-- [ ] **7. Port `Decode` + tests (includes all three error cases)**
+- [x] **7. Port `Decode` + tests (includes all three error cases)**
   - Source: `punycode.js:196-281`
-  - Specs: `specs/src-decode.md:1-328`, `specs/test-decode.md:34-316` (23 pass vectors + 1 invalid-input case at `tests/tests.js:302-309`), plus `specs/test-ucs2-decode.md:95-112` (two misfiled error tests actually targeting `punycode.decode` at `tests/tests.js:255-270`).
-  - Create `decode.go`: `func Decode(input string) (string, error)`. Follow the structure at `punycode.js:196-281`:
-    - Basic prefix detection via `strings.LastIndex(input, "-")`.
-    - Main loop: variable-length integer decode with three overflow guards (`punycode.js:243-245`, `:255-257`, `:268-270`) — each returns `ErrOverflow`. Invalid base-36 digit returns `ErrInvalidInput` (`:235, 241`). Non-basic code point in prefix returns `ErrNotBasic` (`:216`).
-    - Insertion at `:276` (`output.splice(i, 0, n)`) → in Go: `output = append(output[:i], append([]rune{n}, output[i:]...)...)`; pre-grow capacity once outside the loop.
-    - Final assembly via `string(output)`.
-  - `decode_test.go`: table with all 23 passing vectors from `tests/tests.js:7-136` (the `testData.strings` block), plus `decode("ZZZ") == "\u7BA5"` at `tests/tests.js:299-301`, plus three error-case subtests: `"\x81-"` → `ErrNotBasic`, `"\x81"` → `ErrOverflow`, `"ls8h="` → `ErrInvalidInput`.
+  - Implemented in `decode.go`; 24 pass vectors (testData.strings has 24, not 23 as spec states), `decode("ZZZ") == "\u7BA5"`, three error subtests.
+  - Note: JS `'\xNN'` (NN >= 0x80) = U+00NN; Go test vectors must use `\u00NN`, not `\xNN` (raw byte). `"\x81"` → `ErrInvalidInput` (not ErrOverflow — the JS test description is misleading but the actual thrown error is 'invalid-input').
 
 - [ ] **8. Port `Encode` + tests**
   - Source: `punycode.js:290-376`

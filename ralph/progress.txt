@@ -56,3 +56,25 @@ Implemented UCS2Decode, UCS2DecodeUnits, UCS2Encode in ucs2.go. All 10 tests pas
   - ucs2_test.go: 10 tests — 7 round-trip vectors via UCS2DecodeUnits/UCS2Encode, non-mutation assert, basic UCS2Decode smoke tests
   - todo.md: marked items 5-6 done, recorded design decision re: UCS2DecodeUnits split
 ---
+
+<promise>NEXT</promise>
+═══════════════════════════════════════════════════════
+  Ralph Iteration 4
+═══════════════════════════════════════════════════════
+
+Finding most important item to address from todo.md. Items 1-6 are complete, so item 7 (Decode) is next...
+
+Chose item 7 (Decode), it's the first unimplemented core function.
+
+Reading existing Go files to confirm the current state before writing new code...
+
+All 37 tests pass (go build, go vet, go test all green). Committing...
+
+## 2026-04-21 UTC - Changes committed.
+- Implemented Decode function (item 7)
+- Files changed: punycode/decode.go (new), punycode/decode_test.go (new), ralph/todo.md, ralph/progress.txt
+- **Brief description of changes:**
+  - decode.go: RFC 3492 §6.2 decoder — basic prefix copy, variable-length integer loop with three overflow guards, insertion via append+copy, returns (string, error)
+  - decode_test.go: 24 pass vectors from testData.strings, uppercase case-insensitivity test, 3 error subtests
+  - todo.md: marked item 7 complete, noted JS \xNN vs Go \u00NN, corrected vector count (24 not 23), corrected \x81 error type
+---
