@@ -16,7 +16,7 @@ Dependency-ordered build queue. One bullet ≈ one Ralph build iteration ≈ one
 
 ### Setup
 
-- [ ] **1. Bootstrap Go module — constants, errors, Version**
+- [x] **1. Bootstrap Go module — constants, errors, Version**
   - Source: `punycode.js:1-32` (params + regexes + errors), `:425` (`version: '2.3.1'`)
   - Specs: `specs/src-constants.md:1-117`, `specs/src-error.md:1-116`, `specs/src-publicAPI.md:1-133`
   - Create: `go.mod` (`module github.com/<fork>/nexpill-ralph/punycode` or similar), `punycode.go` containing `package punycode`, `const Version = "2.3.1"`, bootstring parameters (`maxInt`, `base`, `tMin`, `tMax`, `skew`, `damp`, `initialBias`, `initialN`, `delimiter = '-'`), the precomputed `baseMinusTMin`, and the three sentinel `var Err* = errors.New(...)` with messages from `punycode.js:23-25`.

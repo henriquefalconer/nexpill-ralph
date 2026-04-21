@@ -2,22 +2,17 @@
   Ralph Iteration 1
 ═══════════════════════════════════════════════════════
 
-Finding most important item to address by reading existing specs and todo...
+Finding most important item to address from todo.md, studying current codebase state...
 
-Read existing todo.md and README. The goal is to replace todo.md with a Go porting plan. Reading all specs and source files in parallel...
+Chose item 1 (Bootstrap Go module — constants, errors, Version), it's the foundation of the Go port.
 
-Read punycode.js (444 lines) and tests/tests.js (371 lines). Delegating spec reads to subagents in parallel to build informed Go porting plan...
+Created punycode/ directory with go.mod and punycode.go. go build ./... passes. Now updating todo.md and committing...
 
-Got digests from 5 parallel subagents covering 16 specs + tooling. No existing Go scaffolding (go.mod / *.go absent). Writing dependency-ordered todo.md now...
-
-## 2026-04-21 00:21 UTC - Changes committed.
-- Rewrote ralph/todo.md as a dependency-ordered Go port plan (14 iterations + out-of-scope list).
-- Files changed: ralph/todo.md, ralph/progress.txt.
+## 2026-04-21 00:27 UTC - Changes committed.
+- Bootstrapped Go module for punycode package
+- Files changed: punycode/go.mod, punycode/punycode.go
 - **Brief description of changes:**
-  - Replaced stale "verify citations" todo list with a 14-item build queue for the punycode.js → Go port.
-  - Each bullet cites spec line ranges (specs/src-*.md, specs/test-*.md) AND punycode.js source line ranges, so individual Claude Code build sessions are self-contained.
-  - Ordered by strict dependency: constants/errors → leaf helpers (basicToDigit, digitToBasic, adapt) → UCS-2 codec → Decode/Encode → mapDomain → ToASCII/ToUnicode → polish (shared fixture, doc.go, CI).
-  - Added top-matter "design decisions" block fixing integer type (`int` not `int32`), regex replacements (prefer `strings` over `regexp`), and error sentinel strategy — so every iteration agrees on conventions.
-  - Flagged UCS-2 divergence: Go `string` cannot natively hold lone surrogates; proposed `UCS2DecodeUnits([]uint16)` alongside `UCS2Decode(string)` and marked as "confirm with user".
-  - Explicitly excluded scripts/prepublish.js, ds shell script, and 1:1 port of tests/tests.js.
+  - Created punycode/go.mod with module path github.com/henriquefalconer/nexpill-ralph/punycode, go 1.22
+  - Created punycode/punycode.go with package punycode, Version const, all Bootstring RFC 3492 §5.1 constants (maxInt, base, tMin, tMax, skew, damp, initialBias, initialN, delimiter, baseMinusTMin), and three sentinel errors (ErrOverflow, ErrNotBasic, ErrInvalidInput)
+  - go build ./... and go vet ./... pass with no errors
 ---
