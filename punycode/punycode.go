@@ -1,9 +1,3 @@
-// Package punycode implements the Punycode encoding algorithm (RFC 3492)
-// and the IDNA domain name processing (RFC 5891).
-//
-// It is a Go port of mathiasbynens/punycode.js v2.3.1.
-// The JS nested namespace punycode.ucs2.{encode,decode} is flattened to
-// UCS2Encode / UCS2Decode in this package.
 package punycode
 
 import "errors"
@@ -26,9 +20,14 @@ const (
 	baseMinusTMin = base - tMin // 35; pre-computed for bias calculations
 )
 
-// Sentinel errors matching punycode.js:22-25.
-var (
-	ErrOverflow     = errors.New("Overflow: input needs wider integers to process")
-	ErrNotBasic     = errors.New("Illegal input >= 0x80 (not a basic code point)")
-	ErrInvalidInput = errors.New("Invalid input")
-)
+// ErrOverflow is returned when arithmetic overflows the integer type.
+// Mirrors punycode.js:23 ("overflow" error).
+var ErrOverflow = errors.New("Overflow: input needs wider integers to process")
+
+// ErrNotBasic is returned when a non-basic code point (≥ 0x80) appears where
+// only basic ASCII is permitted. Mirrors punycode.js:24 ("not-basic" error).
+var ErrNotBasic = errors.New("Illegal input >= 0x80 (not a basic code point)")
+
+// ErrInvalidInput is returned when the input string is structurally malformed.
+// Mirrors punycode.js:25 ("invalid-input" error).
+var ErrInvalidInput = errors.New("Invalid input")

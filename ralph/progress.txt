@@ -140,3 +140,24 @@ Tests pass (go test ./...), build clean (go build ./...), vet clean (go vet ./..
   - Removed inline vector vars and type defs from individual test files; each now references `testVectors.*`
   - Pure refactor: no behavior change; all tests, build, and vet green
 ---
+
+<promise>NEXT</promise>
+═══════════════════════════════════════════════════════
+  Ralph Iteration 8
+═══════════════════════════════════════════════════════
+
+Finding most important item to address from todo.md...
+
+Chose item 13: Add package documentation (doc.go). It's the next unchecked item in todo.md.
+
+Created doc.go with expanded package-level comment. Updated punycode.go: removed duplicate package comment, split grouped Err* vars into individual named doc comments. All checks green (go build, go vet, go test).
+
+## 2026-04-21T00:00:00 UTC - Changes committed.
+- Created doc.go with full package-level comment
+- Updated punycode.go: removed duplicate package doc, gave each Err* its own named comment
+- **Brief description of changes:**
+  - [doc.go] New file: package comment citing RFC 3492, RFC 5891, upstream JS library, public surface summary, quick-start examples
+  - [punycode.go] Removed duplicate package-level comment (now in doc.go)
+  - [punycode.go] Split `var (ErrOverflow, ErrNotBasic, ErrInvalidInput)` block into three individually-documented vars
+  - [ralph/todo.md] Marked item 13 complete with implementation notes
+---

@@ -102,9 +102,10 @@ Dependency-ordered build queue. One bullet ≈ one Ralph build iteration ≈ one
   - All test functions now reference `testVectors.Strings`, `testVectors.UCS2`, `testVectors.Domains`, `testVectors.Separators`.
   - Pure refactor, no new behavior; `go test ./...`, `go build ./...`, `go vet ./...` all green.
 
-- [ ] **13. Add package documentation (`doc.go`)**
+- [x] **13. Add package documentation (`doc.go`)**
   - Specs: `specs/src-publicAPI.md:1-133`
   - Create `doc.go` with a package-level comment citing RFC 3492 and RFC 5891, and summarizing the public surface. Each exported symbol (`Version`, `Encode`, `Decode`, `ToASCII`, `ToUnicode`, `UCS2Encode`, `UCS2Decode`, the three `Err*` sentinels) gets a Go-doc comment starting with its own name. Link to the upstream `mathiasbynens/punycode.js` and the commit hash that corresponds to version 2.3.1.
+  - Done: Created doc.go with full package-level comment (RFC refs, public surface summary, quick-start examples, upstream link). Moved package doc from punycode.go to doc.go. Split grouped Err* var block into individual named doc comments.
 
 - [ ] **14. Final verification + CI hook**
   - Run `go build ./...`, `go test -race ./...`, `go vet ./...`. All three must pass.
