@@ -118,3 +118,25 @@ Implemented mapDomain, ToASCII, ToUnicode. 161 tests pass. Fixed Decode to use U
   - decode.go: changed `string(output)` → `UCS2Encode(output)` so surrogate code points survive Decode as WTF-8 bytes instead of becoming U+FFFD
   - 161 tests pass, 0 failures
 ---
+
+<promise>NEXT</promise>
+═══════════════════════════════════════════════════════
+  Ralph Iteration 7
+═══════════════════════════════════════════════════════
+
+Finding most important item to address from todo.md. Items 1-11 are done; evaluating items 12-14...
+
+Chose item 12 (Centralize test fixture), it is the next pending item in the dependency-ordered build queue.
+
+Reading tests/tests.js to verify vector counts before writing testdata_test.go...
+
+Tests pass (go test ./...), build clean (go build ./...), vet clean (go vet ./...). Item 12 complete. Updating todo.md...
+
+## 2026-04-21T01:05:18 UTC - Changes committed.
+- Centralized test fixture into testdata_test.go (item 12)
+- Files changed: punycode/testdata_test.go (new), punycode/decode_test.go, punycode/encode_test.go, punycode/ucs2_test.go, punycode/domain_test.go, ralph/todo.md
+- **Brief description of changes:**
+  - Created `testdata_test.go` with all 4 test fixture categories (24 Strings, 7 UCS2, 10 Domains, 4 Separators) plus type definitions and `ucs2EncodeExpected`
+  - Removed inline vector vars and type defs from individual test files; each now references `testVectors.*`
+  - Pure refactor: no behavior change; all tests, build, and vet green
+---

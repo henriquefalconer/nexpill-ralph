@@ -96,10 +96,11 @@ Dependency-ordered build queue. One bullet ≈ one Ralph build iteration ≈ one
 
 ### Polish
 
-- [ ] **12. Centralize test fixture (`testdata_test.go`)**
-  - Specs: `specs/test-vectors.md:10-200` (master index of all four fixture blocks)
-  - Mirror the JS `testData` object at `tests/tests.js:6-243` as a single package-internal Go value: `var testVectors = struct{ Strings, UCS2, Domains, Separators []vector }{ ... }`. Each subtest (`TestEncode`, `TestDecode`, `TestToASCII`, `TestToUnicode`, `TestUCS2Decode`, `TestUCS2Encode`) iterates this one fixture instead of inlining vectors. Prevents drift between test files.
-  - Only after iterations 5–11 have landed their inline vectors. This iteration is a pure refactor; no new behavior.
+- [x] **12. Centralize test fixture (`testdata_test.go`)**
+  - Created `testdata_test.go` with: type definitions (`stringVector`, `ucs2Vector`, `domainVector`, `separatorVector`), `ucs2EncodeExpected`, and `testVectors` struct containing all 4 fixture categories (24 Strings, 7 UCS2, 10 Domains, 4 Separators).
+  - Removed type defs and inline vector vars from `decode_test.go`, `encode_test.go`, `ucs2_test.go`, `domain_test.go`.
+  - All test functions now reference `testVectors.Strings`, `testVectors.UCS2`, `testVectors.Domains`, `testVectors.Separators`.
+  - Pure refactor, no new behavior; `go test ./...`, `go build ./...`, `go vet ./...` all green.
 
 - [ ] **13. Add package documentation (`doc.go`)**
   - Specs: `specs/src-publicAPI.md:1-133`
