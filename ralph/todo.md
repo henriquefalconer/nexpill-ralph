@@ -1,0 +1,10 @@
+# Ralph TODO
+
+Prioritized follow-ups for future iterations. Top item = next to tackle.
+
+- **Verify citations in `specs/src-*.md`** — spot-check that `punycode.js:LINE` references resolve to the claimed constructs. Subagents wrote line numbers from instructions rather than re-reading the file each time; a single pass with Grep + Read can catch drift (e.g., off-by-one on comment boundaries).
+- **Cross-link src and test specs** — add a "Tests that exercise this unit" section at the bottom of each `specs/src-*.md`, citing the matching `specs/test-*.md` file. E.g. `src-decode.md` ↔ `test-decode.md`, `src-encode.md` ↔ `test-encode.md`, `src-ucs2decode.md` ↔ `test-ucs2-decode.md`, `src-toASCII.md` ↔ `test-toASCII.md`, `src-toUnicode.md` ↔ `test-toUnicode.md`, `src-ucs2encode.md` ↔ `test-ucs2-encode.md`. Internal helpers (`adapt`, `basicToDigit`, `digitToBasic`, `map`, `mapDomain`, `error`, `constants`) have no direct test file — note that they are covered transitively via `test-decode.md` / `test-encode.md`.
+- **Document the test-vectors table** — `specs/test-vectors.md` already exists; confirm that `src-encode.md` and `src-decode.md` reference it where appropriate (they describe tests by behavior but don't always link the canonical vectors spec).
+- **Decide whether to spec `ds`** — `/ds` is a Docker-sandbox launcher shell script. It is project tooling, not library source, so it falls outside the strict `src/*` scope. If we want full-repo coverage, add `specs/src-ds.md`. Skip otherwise.
+- **Decide whether to spec `tests/tests.js` as a src-file** — currently documented only through the `specs/test-*.md` per-describe-block specs. A unified `specs/src-tests.md` documenting overall test harness shape (mocha, `testData` structure, load order) could complement them. Skip if the per-block specs are deemed sufficient.
+- **Optional: add `specs/README.md` index** — the user asked for flat structure, so subdirectories are out; a flat `README.md` listing each spec with a one-line summary would make navigation easier. Confirm with user before adding.

@@ -2,15 +2,40 @@
   Ralph Iteration 1
 ═══════════════════════════════════════════════════════
 
-Finding most important item to address: studying tests/* and documenting in /specs/*.md...
+Finding most important item to address by reading ralph/todo.md, existing specs/**, and src/* tree...
 
-Chose: decompose tests/tests.js into 7 spec files — one per describe block plus shared test vectors. Will dispatch subagents in parallel.
+Repository has no src/ directory. Implementation lives at punycode.js (top-level) and scripts/prepublish.js. Existing specs/ document test cases. Will treat punycode.js functions as the 'src/*' units to document, plus scripts/prepublish.js as a build-support unit...
 
-## 2026-04-21 00:02 UTC - Changes committed.
-- Documented tests/tests.js into 7 per-logical-unit specs in specs/
-- Files changed: specs/test-vectors.md, specs/test-ucs2-decode.md, specs/test-ucs2-encode.md, specs/test-decode.md, specs/test-encode.md, specs/test-toUnicode.md, specs/test-toASCII.md, ralph/progress.txt, ralph/.last-branch
+Identified 15 logical units to document:
+  14 in punycode.js (constants; error; map; mapDomain; ucs2decode; ucs2encode; basicToDigit; digitToBasic; adapt; decode; encode; toUnicode; toASCII; public API)
+  1 in scripts/prepublish.js
+Spawning 15 Sonnet subagents in parallel, one per unit...
+
+8 specs written so far (constants, error, map, mapDomain, ucs2decode, ucs2encode, basicToDigit, digitToBasic). Spawning 7 more subagents for: adapt, decode, encode, toUnicode, toASCII, public API, prepublish script...
+
+## 2026-04-21 00:12 UTC - Changes committed.
+- Documented every source unit in `punycode.js` and `scripts/prepublish.js` as a flat set of `specs/src-*.md` files, one per logical unit, with implementation citations in `path:line` format.
+- Files changed:
+  - `specs/src-constants.md` (new)
+  - `specs/src-error.md` (new)
+  - `specs/src-map.md` (new)
+  - `specs/src-mapDomain.md` (new)
+  - `specs/src-ucs2decode.md` (new)
+  - `specs/src-ucs2encode.md` (new)
+  - `specs/src-basicToDigit.md` (new)
+  - `specs/src-digitToBasic.md` (new)
+  - `specs/src-adapt.md` (new)
+  - `specs/src-decode.md` (new)
+  - `specs/src-encode.md` (new)
+  - `specs/src-toUnicode.md` (new)
+  - `specs/src-toASCII.md` (new)
+  - `specs/src-publicAPI.md` (new)
+  - `specs/src-scripts-prepublish.md` (new)
+  - `ralph/todo.md` (new)
+  - `ralph/progress.txt` (this block)
 - **Brief description of changes:**
-  - Dispatched 7 parallel Sonnet subagents — one each for the four testData categories (strings/ucs2/domains/separators combined into test-vectors.md) and the six describe blocks (ucs2.decode, ucs2.encode, decode, encode, toUnicode, toASCII).
-  - Every factual claim in every spec cites tests/tests.js:LINE and, where relevant, punycode.js:LINE.
-  - Flat structure under specs/, no subdirectories, ready for stage 2 (source→specs) to add sibling files.
+  - 15 spec files, one per logical unit (14 in punycode.js + 1 for the prepublish build script), written by 15 Sonnet subagents running in parallel.
+  - Every factual claim cites `punycode.js:LINE`, `scripts/prepublish.js:LINE`, or `package.json:LINE`.
+  - Covers: Bootstring constants / regex / errors, the `error` throw helper, the hand-rolled `map`/`mapDomain` helpers, `ucs2decode`/`ucs2encode`, the `basicToDigit`/`digitToBasic` ASCII↔Punycode mappers, the `adapt` bias function (RFC 3492 §3.4), the core `decode`/`encode` algorithms (RFC 3492 §6.2/6.3), the user-facing `toUnicode`/`toASCII` wrappers, the public API object + `module.exports`, and the `prepublish.js` CJS→ESM build script.
+  - Created `ralph/todo.md` listing follow-ups: citation spot-check, cross-linking src↔test specs, optional coverage of `ds` bash script and `tests/tests.js` unified spec.
 ---
