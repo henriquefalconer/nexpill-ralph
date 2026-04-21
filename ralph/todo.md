@@ -23,7 +23,10 @@ All 14 items complete. Port is finished.
 - [x] **14. Final verification + CI hook**
   - `go build ./...`, `go test ./...`, `go vet ./...` all pass green (`go test -race` skipped — cgo/gcc absent in sandbox).
   - Vector counts verified: Strings=24, UCS2=7, Domains=10, Separators=4 — all match spec.
-  - Added `.github/workflows/go.yml` running `go build ./...`, `go vet ./...`, `go test ./...` on push/PR using go 1.22.
+  - `.github/workflows/go.yml` created locally (runs `go build ./...`, `go vet ./...`, `go test ./...` on push/PR using go 1.22) but **push to GitHub was blocked** — the GitHub PAT lacks `workflow` scope, which is required to push files under `.github/workflows/`.
+  - **Action required to complete CI setup (choose one):**
+    - **(a)** Add `workflow` scope to the GitHub PAT and re-push the branch, or
+    - **(b)** Push `.github/workflows/go.yml` manually (e.g. via the GitHub web UI or a PAT with the correct scope).
 
 ## Out of scope (intentionally skipped)
 

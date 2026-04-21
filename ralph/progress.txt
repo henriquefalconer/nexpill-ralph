@@ -182,3 +182,5 @@ go build, go test, go vet all pass. Vector counts verified (Strings=24, UCS2=7, 
   - Verified vector counts match spec (Strings=24, UCS2=7, Domains=10, Separators=4)
   - Marked item 14 complete in todo.md; cleaned all completed items from todo.md
 ---
+
+Push of .github/workflows/go.yml blocked — PAT lacks workflow scope. File exists locally. Core verification (build/test/vet) all green and pushed. Documenting in todo.md.
