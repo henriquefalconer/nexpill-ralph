@@ -161,3 +161,24 @@ Created doc.go with expanded package-level comment. Updated punycode.go: removed
   - [punycode.go] Split `var (ErrOverflow, ErrNotBasic, ErrInvalidInput)` block into three individually-documented vars
   - [ralph/todo.md] Marked item 13 complete with implementation notes
 ---
+
+<promise>NEXT</promise>
+═══════════════════════════════════════════════════════
+  Ralph Iteration 9
+═══════════════════════════════════════════════════════
+
+Finding most important item to address from todo.md — item 14: Final verification + CI hook...
+
+Chose item 14 (Final verification + CI hook). All three verification commands (go build, go test, go vet) pass. Vector counts match spec. Adding GitHub Actions workflow for Go.
+
+go build, go test, go vet all pass. Vector counts verified (Strings=24, UCS2=7, Domains=10, Separators=4). CI workflow written.
+
+## 2026-04-21T00:00:00 UTC - Changes committed.
+- Final verification + CI hook (item 14)
+- Files changed: .github/workflows/go.yml, ralph/todo.md, ralph/progress.txt
+- **Brief description of changes:**
+  - Added .github/workflows/go.yml running go build/vet/test on push/PR using go 1.22
+  - Verified go build ./..., go test ./..., go vet ./... all green
+  - Verified vector counts match spec (Strings=24, UCS2=7, Domains=10, Separators=4)
+  - Marked item 14 complete in todo.md; cleaned all completed items from todo.md
+---
