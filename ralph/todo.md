@@ -12,6 +12,10 @@ Dependency-ordered build queue. One bullet ≈ one Ralph build iteration ≈ one
 - **Regex replacements**: prefer `strings` primitives over `regexp`. `regexSeparators` (`punycode.js:19`) → `strings.NewReplacer`; `regexNonASCII` (`punycode.js:18`) → `for _, r := range s { if r > 0x7F … }`; `regexPunycode` (`punycode.js:17`) → `strings.HasPrefix(label, "xn--")` (case-sensitive, matching JS).
 - **Commit discipline**: each iteration leaves `go build ./...` and `go test ./...` green. A new unit lands with its own `_test.go` in the same commit.
 
+## Environment notes
+
+- `go test -race ./...` requires cgo + gcc, which are absent in the sandbox. Use `go test ./...` for verification instead. `go build ./...` and `go vet ./...` are always available.
+
 ## Iterations
 
 ### Setup
@@ -24,19 +28,19 @@ Dependency-ordered build queue. One bullet ≈ one Ralph build iteration ≈ one
 
 ### Pure helpers (leaf nodes — no inter-dependencies)
 
-- [ ] **2. Port `basicToDigit` + table-driven test**
+- [x] **2. Port `basicToDigit` + table-driven test**
   - Source: `punycode.js:144-155`
   - Spec: `specs/src-basicToDigit.md:1-155`
   - Add to `helpers.go`: `func basicToDigit(cp rune) int` returning `0..35` or `base` sentinel. Branches: digit `0x30-0x39` → `26 + (cp - 0x30)`; upper `0x41-0x5A` → `cp - 0x41`; lower `0x61-0x7A` → `cp - 0x61`; else `base`.
   - `helpers_test.go`: cover all four branches plus boundary code points (`0x2F`, `0x3A`, `0x40`, `0x5B`, `0x60`, `0x7B`, `0x80`).
 
-- [ ] **3. Port `digitToBasic` + test**
+- [x] **3. Port `digitToBasic` + test**
   - Source: `punycode.js:168-172`
   - Spec: `specs/src-digitToBasic.md:1-172`
   - Add to `helpers.go`: `func digitToBasic(digit int, flag bool) rune`. Go has no implicit bool→int; translate `75 * (digit < 26)` and `((flag != 0) << 5)` explicitly (e.g. `if digit < 26 { r += 75 }`; `if flag { r -= 32 }`).
   - Test: cover digits 0..35 with `flag=false` (the only flag used by callers at `punycode.js:359, 364`). Add one smoke case with `flag=true` to document the uppercase path even though callers never use it.
 
-- [ ] **4. Port `adapt` (RFC 3492 §3.4) + test**
+- [x] **4. Port `adapt` (RFC 3492 §3.4) + test**
   - Source: `punycode.js:179-187`
   - Spec: `specs/src-adapt.md:1-187`
   - Add to `helpers.go`: `func adapt(delta, numPoints int, firstTime bool) int`.

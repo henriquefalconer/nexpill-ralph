@@ -16,3 +16,23 @@ Created punycode/ directory with go.mod and punycode.go. go build ./... passes. 
   - Created punycode/punycode.go with package punycode, Version const, all Bootstring RFC 3492 §5.1 constants (maxInt, base, tMin, tMax, skew, damp, initialBias, initialN, delimiter, baseMinusTMin), and three sentinel errors (ErrOverflow, ErrNotBasic, ErrInvalidInput)
   - go build ./... and go vet ./... pass with no errors
 ---
+
+<promise>NEXT</promise>
+═══════════════════════════════════════════════════════
+  Ralph Iteration 2
+═══════════════════════════════════════════════════════
+
+Finding most important item to address from todo.md and studying specs...
+
+Chose items 2, 3, 4 (basicToDigit, digitToBasic, adapt) — all pure helpers with no inter-dependencies. Implementing together in helpers.go.
+
+All five tests pass. go build and go vet green. go test -race unavailable (no gcc in sandbox — noted in todo.md).
+
+## 2026-04-21 UTC - Changes committed.
+- Implemented items 2, 3, 4: basicToDigit, digitToBasic, adapt helpers
+- Files changed: punycode/helpers.go, punycode/helpers_test.go, ralph/todo.md
+- **Brief description of changes:**
+  - helpers.go: basicToDigit (rune→int, 4 branches), digitToBasic (int+bool→rune, explicit if branches), adapt (RFC 3492 §3.4 bias adaptation)
+  - helpers_test.go: 5 test functions covering all branches, boundary cases, round-trip, and hand-verified adapt vectors
+  - todo.md: marked items 2-4 done, added environment note about missing gcc/cgo
+---
