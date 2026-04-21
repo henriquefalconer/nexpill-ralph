@@ -49,7 +49,7 @@ The first line appended should be an empty line.
 After finishing item that was picked to be addressed, append the block BELOW to `ralph/progress.txt` FIRST, THEN run `git add -A` and `git commit` so the block is part of the same commit:
 ```
 
-## [Date] [Time] UTC - Changes committed.
+## YYYY-MM-DDTHH:mm:ss UTC - Changes committed.
 - What was implemented
 - Files changed
 - **Brief description of changes:**
