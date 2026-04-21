@@ -84,5 +84,5 @@ func Decode(input string) (string, error) {
 		i++
 	}
 
-	return string(output), nil
+	return UCS2Encode(output), nil
 }

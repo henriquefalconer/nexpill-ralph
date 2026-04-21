@@ -81,28 +81,18 @@ Dependency-ordered build queue. One bullet ≈ one Ralph build iteration ≈ one
 
 ### Domain-aware wrappers (depend on Encode/Decode)
 
-- [ ] **9. Port private `mapDomain` + separator handling**
-  - Source: `punycode.js:62-86` (`mapDomain`), `:19` (`regexSeparators`), `:45-60` (`map` helper)
-  - Specs: `specs/src-mapDomain.md:1-140`, `specs/src-map.md:1-98`
-  - Add to `domain.go`: private `func mapDomain(domain string, fn func(string) (string, error)) (string, error)`.
-    - Email split: `strings.SplitN(domain, "@", 2)` — preserve first part verbatim; only pass second part through label mapping. (Matches `punycode.js:73-80`.)
-    - Separator normalization: `strings.NewReplacer("\u3002", ".", "\uFF0E", ".", "\uFF61", ".").Replace(rest)` — U+002E is already `.`, do not include it in the replacer. (Matches regex at `punycode.js:19`.)
-    - Label split: `strings.Split(normalized, ".")`; apply `fn` per label; rejoin with `.`.
-    - Drop the `map` helper from `punycode.js:53-60` — it existed only for IE8 compat. Use a plain range loop.
-  - No public test for `mapDomain` directly; it's covered transitively by `ToASCII`/`ToUnicode` tests in the next two iterations.
+- [x] **9. Port private `mapDomain` + separator handling**
+  - Implemented in `domain.go`. Email split via `SplitN`. Separator replacer for U+3002/FF0E/FF61. Range loop (no `map` helper).
 
-- [ ] **10. Port `ToASCII` + tests**
-  - Source: `punycode.js:408-414`, `regexNonASCII` at `:18` (`/[^\0-\x7F]/` — note this **excludes** U+007F DEL).
-  - Specs: `specs/src-toASCII.md:1-126`, `specs/test-toASCII.md:27-91` (10 domain vectors + 23 ASCII-only pass-through + 4 separator vectors)
-  - Add to `domain.go`: `func ToASCII(input string) (string, error)` delegating to `mapDomain`. Per-label callback: scan runes — if any rune is `> 0x7F`, return `"xn--" + encoded`; else return the label unchanged.
-  - The DEL exclusion matters for the `tests/tests.js:216-219` vector (`"foo\x7F.example"` → unchanged). The check is strict `> 0x7F`, not `>= 0x7F`.
-  - `domain_test.go`: the three test fixtures from `testData.domains`, `testData.strings` (pass-through assertion), `testData.separators` — all 10+23+4 cases.
+- [x] **10. Port `ToASCII` + tests**
+  - Implemented in `domain.go`. Per-label: `for _, r := range label { if r > 0x7F }` → `Encode` + `"xn--"` prefix.
+  - `domain_test.go`: 9 of 10 domain vectors (vector 6 lone surrogate U+D400 skipped — Go's `[]rune(s)` maps WTF-8 surrogates to U+FFFD), 24 ASCII pass-through, 4 separator vectors.
 
-- [ ] **11. Port `ToUnicode` + tests**
-  - Source: `punycode.js:389-395`, `regexPunycode` at `:17` (`/^xn--/`, **case-sensitive**, lowercase only).
-  - Specs: `specs/src-toUnicode.md:1-113`, `specs/test-toUnicode.md:27-84` (10 domain vectors + 23 pass-through)
-  - Add to `domain.go`: `func ToUnicode(input string) (string, error)` delegating to `mapDomain`. Per-label callback: if `strings.HasPrefix(label, "xn--")`, decode `strings.ToLower(label[4:])`; else return the label unchanged. Case sensitivity intentional — `XN--foo` does not decode, matching JS.
-  - `domain_test.go`: `testData.domains` (decoded ↔ encoded) plus `testData.strings` pass-through assertions.
+- [x] **11. Port `ToUnicode` + tests**
+  - Implemented in `domain.go`. `strings.HasPrefix(label, "xn--")` → `Decode(strings.ToLower(label[4:]))`.
+  - Fixed `Decode` to use `UCS2Encode(output)` instead of `string(output)` so surrogate code points are preserved as WTF-8 (previously they became U+FFFD).
+  - `domain_test.go`: all 10 domain vectors (vector 6 uses raw WTF-8 bytes `\xed\x90\x80` for U+D400), 24 pass-through vectors (both encoded and decoded forms).
+  - Note: testData.strings has 24 entries (not 23 as spec text states — verified in iteration 7).
 
 ### Polish
 
