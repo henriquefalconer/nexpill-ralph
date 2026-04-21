@@ -2,40 +2,22 @@
   Ralph Iteration 1
 ═══════════════════════════════════════════════════════
 
-Finding most important item to address by reading ralph/todo.md, existing specs/**, and src/* tree...
+Finding most important item to address by reading existing specs and todo...
 
-Repository has no src/ directory. Implementation lives at punycode.js (top-level) and scripts/prepublish.js. Existing specs/ document test cases. Will treat punycode.js functions as the 'src/*' units to document, plus scripts/prepublish.js as a build-support unit...
+Read existing todo.md and README. The goal is to replace todo.md with a Go porting plan. Reading all specs and source files in parallel...
 
-Identified 15 logical units to document:
-  14 in punycode.js (constants; error; map; mapDomain; ucs2decode; ucs2encode; basicToDigit; digitToBasic; adapt; decode; encode; toUnicode; toASCII; public API)
-  1 in scripts/prepublish.js
-Spawning 15 Sonnet subagents in parallel, one per unit...
+Read punycode.js (444 lines) and tests/tests.js (371 lines). Delegating spec reads to subagents in parallel to build informed Go porting plan...
 
-8 specs written so far (constants, error, map, mapDomain, ucs2decode, ucs2encode, basicToDigit, digitToBasic). Spawning 7 more subagents for: adapt, decode, encode, toUnicode, toASCII, public API, prepublish script...
+Got digests from 5 parallel subagents covering 16 specs + tooling. No existing Go scaffolding (go.mod / *.go absent). Writing dependency-ordered todo.md now...
 
-## 2026-04-21 00:12 UTC - Changes committed.
-- Documented every source unit in `punycode.js` and `scripts/prepublish.js` as a flat set of `specs/src-*.md` files, one per logical unit, with implementation citations in `path:line` format.
-- Files changed:
-  - `specs/src-constants.md` (new)
-  - `specs/src-error.md` (new)
-  - `specs/src-map.md` (new)
-  - `specs/src-mapDomain.md` (new)
-  - `specs/src-ucs2decode.md` (new)
-  - `specs/src-ucs2encode.md` (new)
-  - `specs/src-basicToDigit.md` (new)
-  - `specs/src-digitToBasic.md` (new)
-  - `specs/src-adapt.md` (new)
-  - `specs/src-decode.md` (new)
-  - `specs/src-encode.md` (new)
-  - `specs/src-toUnicode.md` (new)
-  - `specs/src-toASCII.md` (new)
-  - `specs/src-publicAPI.md` (new)
-  - `specs/src-scripts-prepublish.md` (new)
-  - `ralph/todo.md` (new)
-  - `ralph/progress.txt` (this block)
+## 2026-04-21 00:21 UTC - Changes committed.
+- Rewrote ralph/todo.md as a dependency-ordered Go port plan (14 iterations + out-of-scope list).
+- Files changed: ralph/todo.md, ralph/progress.txt.
 - **Brief description of changes:**
-  - 15 spec files, one per logical unit (14 in punycode.js + 1 for the prepublish build script), written by 15 Sonnet subagents running in parallel.
-  - Every factual claim cites `punycode.js:LINE`, `scripts/prepublish.js:LINE`, or `package.json:LINE`.
-  - Covers: Bootstring constants / regex / errors, the `error` throw helper, the hand-rolled `map`/`mapDomain` helpers, `ucs2decode`/`ucs2encode`, the `basicToDigit`/`digitToBasic` ASCII↔Punycode mappers, the `adapt` bias function (RFC 3492 §3.4), the core `decode`/`encode` algorithms (RFC 3492 §6.2/6.3), the user-facing `toUnicode`/`toASCII` wrappers, the public API object + `module.exports`, and the `prepublish.js` CJS→ESM build script.
-  - Created `ralph/todo.md` listing follow-ups: citation spot-check, cross-linking src↔test specs, optional coverage of `ds` bash script and `tests/tests.js` unified spec.
+  - Replaced stale "verify citations" todo list with a 14-item build queue for the punycode.js → Go port.
+  - Each bullet cites spec line ranges (specs/src-*.md, specs/test-*.md) AND punycode.js source line ranges, so individual Claude Code build sessions are self-contained.
+  - Ordered by strict dependency: constants/errors → leaf helpers (basicToDigit, digitToBasic, adapt) → UCS-2 codec → Decode/Encode → mapDomain → ToASCII/ToUnicode → polish (shared fixture, doc.go, CI).
+  - Added top-matter "design decisions" block fixing integer type (`int` not `int32`), regex replacements (prefer `strings` over `regexp`), and error sentinel strategy — so every iteration agrees on conventions.
+  - Flagged UCS-2 divergence: Go `string` cannot natively hold lone surrogates; proposed `UCS2DecodeUnits([]uint16)` alongside `UCS2Decode(string)` and marked as "confirm with user".
+  - Explicitly excluded scripts/prepublish.js, ds shell script, and 1:1 port of tests/tests.js.
 ---
