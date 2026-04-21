@@ -36,3 +36,23 @@ All five tests pass. go build and go vet green. go test -race unavailable (no gc
   - helpers_test.go: 5 test functions covering all branches, boundary cases, round-trip, and hand-verified adapt vectors
   - todo.md: marked items 2-4 done, added environment note about missing gcc/cgo
 ---
+
+<promise>NEXT</promise>
+═══════════════════════════════════════════════════════
+  Ralph Iteration 3
+═══════════════════════════════════════════════════════
+
+Finding most important item to address from todo.md...
+
+Chose items 5 and 6 (UCS2Decode + UCS2Encode), the UCS-2 codec layer needed by Decode/Encode.
+
+Implemented UCS2Decode, UCS2DecodeUnits, UCS2Encode in ucs2.go. All 10 tests pass (7 round-trip vectors + non-mutation + UCS2Decode basic cases). Now committing...
+
+## 2026-04-21 UTC - Changes committed.
+- Implemented items 5 and 6: UCS2Decode, UCS2DecodeUnits, UCS2Encode
+- Files changed: punycode/ucs2.go, punycode/ucs2_test.go, ralph/todo.md
+- **Brief description of changes:**
+  - ucs2.go: UCS2Decode ([]rune(s) for UTF-8), UCS2DecodeUnits (JS-faithful surrogate-pair algorithm operating on []uint16), UCS2Encode (WTF-8 for surrogate code points, standard UTF-8 for others)
+  - ucs2_test.go: 10 tests — 7 round-trip vectors via UCS2DecodeUnits/UCS2Encode, non-mutation assert, basic UCS2Decode smoke tests
+  - todo.md: marked items 5-6 done, recorded design decision re: UCS2DecodeUnits split
+---

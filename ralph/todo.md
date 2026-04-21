@@ -49,14 +49,14 @@ Dependency-ordered build queue. One bullet ≈ one Ralph build iteration ≈ one
 
 ### UCS-2 codec
 
-- [ ] **5. Port `UCS2Decode` + tests**
+- [x] **5. Port `UCS2Decode` + tests**
   - Source: `punycode.js:101-123`
   - Specs: `specs/src-ucs2decode.md:1-60`, `specs/test-ucs2-decode.md:41-92` (7 vectors)
   - Create `ucs2.go`: `func UCS2Decode(s string) []rune`. Iterate over UTF-16 code units (not Go runes — we need the raw UCS-2 view). The simplest faithful port: range by `uint16` units via `utf16.Encode([]rune(s))` is **wrong** for inputs containing lone surrogates (Go's rune iteration replaces them with `\uFFFD`). Instead walk `s` decoding as UTF-8 to `rune`, then re-encode surrogate-bearing runes back to code units, OR iterate over `s` as `[]byte` and decode UTF-8 manually preserving surrogate semantics.
-  - Expected decision: accept Go `string` as UTF-8; if input contains astral chars they arrive as single runes already. Simulate the JS surrogate-pair recombination only when the caller hands us a `[]uint16` — so expose an additional `UCS2DecodeUnits(units []uint16) []rune` that mirrors the JS algorithm exactly. Document this divergence in `doc.go`. **Confirm with user before committing** — test vectors at `specs/test-ucs2-decode.md:41-92` use raw UTF-16 sequences that Go `string` cannot represent natively.
+  - Decision: `UCS2Decode(string) []rune` = `[]rune(s)` for valid UTF-8. `UCS2DecodeUnits([]uint16) []rune` mirrors JS surrogate algorithm exactly. Surrogates in `UCS2Encode` output use WTF-8 (3-byte). All 7 vectors tested via `UCS2DecodeUnits` + `UCS2Encode` in `ucs2_test.go`.
   - `ucs2_test.go`: table-driven test exercising each of the 7 vectors in `specs/test-ucs2-decode.md`.
 
-- [ ] **6. Port `UCS2Encode` + tests**
+- [x] **6. Port `UCS2Encode` + tests**
   - Source: `punycode.js:133`
   - Specs: `specs/src-ucs2encode.md:1-103`, `specs/test-ucs2-encode.md:19-48` (7 vectors + non-mutation)
   - `ucs2.go`: `func UCS2Encode(codePoints []rune) string` — build via `strings.Builder` + `WriteRune`. Go `[]rune` is a copy-on-pass slice header; non-mutation (the assertion at `tests/tests.js:282-287`) is automatic but add a test that verifies the input slice is unchanged after the call.
