@@ -119,6 +119,8 @@ Ralph's auto-push needs cached credentials inside the sandbox. First, create a f
 Now cache it inside the sandbox. The first `git push` triggers the username/password prompt; paste the PAT as the password.
 
 ```bash
+git config --global --unset credential.https://github.com.helper
+git config --global credential.helper store
 ./ds git pull
 ./ds git push
 # Username for 'https://github.com': <your-user>
