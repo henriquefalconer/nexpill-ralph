@@ -46,3 +46,26 @@ Build succeeded. All 53 tests pass (20 constants, 3 throwPuny, 9 mapDomain, 7 uc
   - [Punycode/UCS2.lean] `ucs2ToString : Array UInt16 → String` — bridge helper decoding UTF-16 to Lean string; lone surrogates are dropped (documented D2 limitation)
   - [Tests/Main.lean] 7 ucs2decode fixture tests, 7 ucs2encode fixture tests, 1 ASCII round-trip test, 6 bridge tests
 ---
+
+<promise>NEXT</promise>
+═══════════════════════════════════════════════════════
+  Ralph Iteration 3
+═══════════════════════════════════════════════════════
+
+Finding most important item to address from todo.md — item 5 (Bootstring.lean) appears next after completed items 1-4...
+
+
+Chose item 5 (Bootstring.lean), it's the next unimplemented item in the todo sequence.
+
+Created Punycode/Bootstring.lean with basicToDigit, digitToBasic, adapt. All 80 tests green.
+
+## 2026-06-28T22:35:00 UTC - Changes committed.
+- Implemented `Punycode/Bootstring.lean` with basicToDigit, digitToBasic, adaptLoop, adapt
+- Updated `Punycode.lean` to import Punycode.Bootstring
+- Updated `Tests/Main.lean` with Bootstring test suite (34 new tests)
+- **Brief description of changes:**
+  - [Punycode/Bootstring.lean] `basicToDigit : UInt32 → Nat` — maps ASCII code points to digit values 0..35, returns `base` (36) as sentinel for non-digits; case-insensitive (ports punycode.js:144-155)
+  - [Punycode/Bootstring.lean] `digitToBasic : Nat → Nat → UInt32` — maps digit values to ASCII code points using explicit branches per D3 instead of the branchless JS bit-trick (ports punycode.js:168-172)
+  - [Punycode/Bootstring.lean] `adapt : Nat → Nat → Bool → Nat` — RFC 3492 §3.4 bias adaptation; `adaptLoop` declared partial because Lean can't prove `delta / 35 < delta` automatically from the loop guard (ports punycode.js:179-187)
+  - [Tests/Main.lean] 14 basicToDigit tests, 13 digitToBasic tests (incl. round-trip), 7 adapt tests with manually-verified expected values
+---

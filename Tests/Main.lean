@@ -2,6 +2,7 @@
 import Punycode.Constants
 import Punycode.Helpers
 import Punycode.UCS2
+import Punycode.Bootstring
 
 open Punycode
 
@@ -175,4 +176,77 @@ def main : IO Unit := do
      ucs2ToString #[(0xD800 : UInt16), 97] == "a"),
     ("ucs2ToString lone low surrogate dropped",
      ucs2ToString #[(0xDC00 : UInt16), 97] == "a"),
+  ]
+
+  IO.println "=== Punycode.Bootstring — basicToDigit ==="
+  runTests #[
+    -- Digit characters '0'..'9' → 26..35 (punycode.js:145-147).
+    ("basicToDigit '0' (0x30) = 26",  basicToDigit 0x30 == 26),
+    ("basicToDigit '9' (0x39) = 35",  basicToDigit 0x39 == 35),
+    ("basicToDigit '5' (0x35) = 31",  basicToDigit 0x35 == 31),
+    -- Uppercase letters 'A'..'Z' → 0..25 (punycode.js:148-150).
+    ("basicToDigit 'A' (0x41) = 0",   basicToDigit 0x41 == 0),
+    ("basicToDigit 'Z' (0x5A) = 25",  basicToDigit 0x5A == 25),
+    ("basicToDigit 'M' (0x4D) = 12",  basicToDigit 0x4D == 12),
+    -- Lowercase letters 'a'..'z' → 0..25 (punycode.js:151-153).
+    ("basicToDigit 'a' (0x61) = 0",   basicToDigit 0x61 == 0),
+    ("basicToDigit 'z' (0x7A) = 25",  basicToDigit 0x7A == 25),
+    ("basicToDigit 'm' (0x6D) = 12",  basicToDigit 0x6D == 12),
+    -- Case-insensitive: 'A' and 'a' give the same digit.
+    ("basicToDigit 'A' == basicToDigit 'a'",
+      basicToDigit 0x41 == basicToDigit 0x61),
+    -- Non-digit characters return `base` (36) as sentinel (punycode.js:154).
+    ("basicToDigit '-' (0x2D) = base", basicToDigit 0x2D == base),
+    ("basicToDigit '!' (0x21) = base", basicToDigit 0x21 == base),
+    ("basicToDigit 0x00 = base",       basicToDigit 0x00 == base),
+    ("basicToDigit 0x7F = base",       basicToDigit 0x7F == base),
+  ]
+
+  IO.println "=== Punycode.Bootstring — digitToBasic ==="
+  runTests #[
+    -- Digits 0..25 with flag=0 → lowercase letters 'a'..'z' (ascii 97..122).
+    ("digitToBasic 0 0 = 'a' (97)",    digitToBasic 0  0 == 97),
+    ("digitToBasic 25 0 = 'z' (122)",  digitToBasic 25 0 == 122),
+    ("digitToBasic 12 0 = 'm' (109)",  digitToBasic 12 0 == 109),
+    -- Digits 26..35 with any flag → ascii digits '0'..'9' (ascii 48..57).
+    ("digitToBasic 26 0 = '0' (48)",   digitToBasic 26 0 == 48),
+    ("digitToBasic 35 0 = '9' (57)",   digitToBasic 35 0 == 57),
+    ("digitToBasic 28 0 = '2' (50)",   digitToBasic 28 0 == 50),
+    -- Digits 0..25 with flag=1 → uppercase letters 'A'..'Z' (ascii 65..90).
+    ("digitToBasic 0 1 = 'A' (65)",    digitToBasic 0  1 == 65),
+    ("digitToBasic 25 1 = 'Z' (90)",   digitToBasic 25 1 == 90),
+    ("digitToBasic 12 1 = 'M' (77)",   digitToBasic 12 1 == 77),
+    -- Round-trip: digitToBasic is inverse of basicToDigit for lowercase.
+    ("round-trip digit 0",  basicToDigit (digitToBasic 0  0) == 0),
+    ("round-trip digit 25", basicToDigit (digitToBasic 25 0) == 25),
+    ("round-trip digit 26", basicToDigit (digitToBasic 26 0) == 26),
+    ("round-trip digit 35", basicToDigit (digitToBasic 35 0) == 35),
+  ]
+
+  IO.println "=== Punycode.Bootstring — adapt ==="
+  runTests #[
+    -- adapt with delta=0: result is 0 regardless of numPoints or firstTime.
+    ("adapt 0 1 false = 0",  adapt 0 1 false == 0),
+    ("adapt 0 10 true = 0",  adapt 0 10 true == 0),
+    -- firstTime=true: heavy damping by damp (700).
+    -- adapt 700 1 true: delta1=1, delta2=2, loop: 2≤455 → (2,0),
+    --   result = 36*2/(2+38) = 72/40 = 1.
+    ("adapt 700 1 true = 1",   adapt 700 1 true == 1),
+    -- adapt 700 2 true: delta1=1, delta2=1+0=1, loop: 1≤455 → (1,0),
+    --   result = 36*1/(1+38) = 36/39 = 0.
+    ("adapt 700 2 true = 0",   adapt 700 2 true == 0),
+    -- firstTime=false: halve.
+    -- adapt 1400 2 false: delta1=700, delta2=700+350=1050,
+    --   loop: 1050>455 → delta=30, k=36; 30≤455 → (30,36),
+    --   result = 36 + 36*30/(30+38) = 36 + 1080/68 = 36 + 15 = 51.
+    ("adapt 1400 2 false = 51", adapt 1400 2 false == 51),
+    -- adapt 10000 100 false: delta1=5000, delta2=5050,
+    --   loop: 5050>455 → delta=144, k=36; 144≤455 → (144,36),
+    --   result = 36 + 36*144/(144+38) = 36 + 5184/182 = 36 + 28 = 64.
+    ("adapt 10000 100 false = 64", adapt 10000 100 false == 64),
+    -- adapt requires multiple loop iterations.
+    -- adapt 500000 50 false: delta1=250000, delta2=255000,
+    --   loop: 255000>455 → 7285>455 → 208≤455; k=72,
+    --   result = 72 + 36*208/(208+38) = 72 + 7488/246 = 72 + 30 = 102.
+    ("adapt 500000 50 false = 102", adapt 500000 50 false == 102),
   ]

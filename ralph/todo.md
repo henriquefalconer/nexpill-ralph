@@ -51,7 +51,7 @@ so every item only depends on earlier ones.
   close `Nat.sub` termination goals involving `Array.size` automatically. The
   function trivially terminates since the index `i` strictly increases every branch.
 
-- [ ] **5. `Punycode/Bootstring.lean` — `basicToDigit`, `digitToBasic`,
+- [x] **5. `Punycode/Bootstring.lean` — `basicToDigit`, `digitToBasic`,
   `adapt`.** Port `punycode.js:144-187`. `basicToDigit` (`punycode.js:144-155`)
   → branch table returning `0..35` or `base` sentinel. `digitToBasic`
   (`punycode.js:168-172`) → explicit `Nat` arithmetic replacing the branchless
@@ -59,6 +59,10 @@ so every item only depends on earlier ones.
   `punycode.js:183-185` needs termination — prefer the decreasing-`delta` measure
   proof (`baseMinusTMin = 35 > 1`), fall back to fuel (D4). Spec:
   [`specs/impl-bootstring-helpers.md`](../specs/impl-bootstring-helpers.md).
+  **Note:** `adaptLoop` uses `partial def` (same pattern as `ucs2decodeAux`):
+  Lean cannot prove `delta / baseMinusTMin < delta` from the `delta > 455` guard
+  automatically; the loop trivially terminates since `35 > 1` ensures strict
+  decrease.
 
 - [ ] **6. `Punycode/Decode.lean` — `decode`.** Port `punycode.js:196-281` →
   `decode : String → Except PunyError String` (output via `Array UInt32` then the
