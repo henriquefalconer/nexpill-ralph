@@ -3,6 +3,7 @@ import Punycode.Constants
 import Punycode.Helpers
 import Punycode.UCS2
 import Punycode.Bootstring
+import Punycode.Decode
 
 open Punycode
 
@@ -249,4 +250,51 @@ def main : IO Unit := do
     --   loop: 255000>455 → 7285>455 → 208≤455; k=72,
     --   result = 72 + 36*208/(208+38) = 72 + 7488/246 = 72 + 30 = 102.
     ("adapt 500000 50 false = 102", adapt 500000 50 false == 102),
+  ]
+
+  -- Decode tests: RFC 3492 §7.1 samples and edge cases.
+  -- Mirrors tests/tests.js:290-310 (fixture-driven + special cases).
+  IO.println "=== Punycode.Decode — decode ==="
+  runTests #[
+    -- Basic code points only (trailing delimiter stripped): tests/tests.js:8-12.
+    ("decode \"Bach-\" = \"Bach\"",
+     decode "Bach-" == .ok "Bach"),
+    -- Single non-ASCII: ü (U+00FC): tests/tests.js:13-17.
+    ("decode \"tda\" = \"ü\"",
+     decode "tda" == .ok "ü"),
+    -- Mix of ASCII and non-ASCII: bücher: tests/tests.js:23-27.
+    ("decode \"bcher-kva\" = \"bücher\"",
+     decode "bcher-kva" == .ok "bücher"),
+    -- RFC 3492 §7.1 Arabic (Egyptian): tests/tests.js:35-38.
+    ("decode \"egbpdaj6bu4bxfgehfvwxn\" = Arabic phrase",
+     decode "egbpdaj6bu4bxfgehfvwxn" == .ok "ليهمابتكلموشعربي؟"),
+    -- RFC 3492 §7.1 Chinese simplified: tests/tests.js:39-43.
+    ("decode \"ihqwcrb4cv8a8dqg056pqjye\" = Chinese simplified",
+     decode "ihqwcrb4cv8a8dqg056pqjye" == .ok "他们为什么不说中文"),
+    -- RFC 3492 §7.1 Russian (lowercase form): tests/tests.js:83-87.
+    ("decode \"b1abfaaepdrnnbgefbadotcwatmq2g4l\" = Russian",
+     decode "b1abfaaepdrnnbgefbadotcwatmq2g4l" == .ok "почемужеонинеговорятпорусски"),
+    -- Emoji: 💩 (U+1F4A9): tests/tests.js (domain fixture, bare label).
+    ("decode \"ls8h\" = 💩",
+     decode "ls8h" == .ok "💩"),
+    -- Uppercase Z is treated identically to lowercase z (case-insensitive basicToDigit):
+    -- tests/tests.js:299-301.
+    ("decode \"ZZZ\" = 箥",
+     decode "ZZZ" == .ok "箥"),
+    -- not-basic error: '\x81-' has non-basic char in prefix region: tests/tests.js:255-261.
+    ("decode \"\\x81-\" = .error .notBasic",
+     decode "\x81-" == .error .notBasic),
+    -- invalid-input: '\x81' has no delimiter; basicToDigit(0x81) = base → invalidInput.
+    -- (test label in JS says "overflow" but actual error is invalidInput — see impl-decode.md:69-76)
+    ("decode \"\\x81\" = .error .invalidInput",
+     decode "\x81" == .error .invalidInput),
+    -- invalid-input: '=' is not a valid base-36 digit: tests/tests.js:302-309.
+    ("decode \"ls8h=\" = .error .invalidInput",
+     decode "ls8h=" == .error .invalidInput),
+    -- Empty input decodes to empty string.
+    ("decode \"\" = \"\"",
+     decode "" == .ok ""),
+    -- ASCII string that breaks host-name rules: tests/tests.js:131-135.
+    ("decode \"-> $1.00 <--\" = \"-> $1.00 <-\"",
+     decode "-> $1.00 <--" == .ok "-> $1.00 <-"),
   ]

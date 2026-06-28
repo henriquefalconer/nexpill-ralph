@@ -64,7 +64,7 @@ so every item only depends on earlier ones.
   automatically; the loop trivially terminates since `35 > 1` ensures strict
   decrease.
 
-- [ ] **6. `Punycode/Decode.lean` — `decode`.** Port `punycode.js:196-281` →
+- [x] **6. `Punycode/Decode.lean` — `decode`.** Port `punycode.js:196-281` →
   `decode : String → Except PunyError String` (output via `Array UInt32` then the
   D2 bridge, mirroring `String.fromCodePoint(...output)` `punycode.js:280`). State
   init `punycode.js:198-202`; basic-points copy + `not-basic` guard
@@ -74,6 +74,7 @@ so every item only depends on earlier ones.
   `not-basic` 216); `adapt` call `punycode.js:264`; `Array.insertIdx` for
   `splice` `punycode.js:276`. Preserve the `decode('\x81')`→`invalidInput`
   behaviour (D1). Spec: [`specs/impl-decode.md`](../specs/impl-decode.md).
+  **Note:** `decodeVLI` and `decodeLoop` use `partial def` (same pattern): Lean cannot prove termination of the VLI digit-accumulation loop automatically; the loops trivially terminate since `index` strictly increases on every iteration.
 
 - [ ] **7. `Punycode/Encode.lean` — `encode`.** Port `punycode.js:290-376` →
   `encode : String → Except PunyError String`. `ucs2decode` the input

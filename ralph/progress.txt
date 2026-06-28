@@ -69,3 +69,28 @@ Created Punycode/Bootstring.lean with basicToDigit, digitToBasic, adapt. All 80 
   - [Punycode/Bootstring.lean] `adapt : Nat → Nat → Bool → Nat` — RFC 3492 §3.4 bias adaptation; `adaptLoop` declared partial because Lean can't prove `delta / 35 < delta` automatically from the loop guard (ports punycode.js:179-187)
   - [Tests/Main.lean] 14 basicToDigit tests, 13 digitToBasic tests (incl. round-trip), 7 adapt tests with manually-verified expected values
 ---
+
+<promise>NEXT</promise>
+═══════════════════════════════════════════════════════
+  Ralph Iteration 4
+═══════════════════════════════════════════════════════
+
+Finding most important item to address from todo.md. Items 1-5 are complete; item 6 (Punycode/Decode.lean) is next...
+
+Chose item 6: Punycode/Decode.lean — implement decode function. Reading specs and existing code in parallel...
+
+Reading existing files to understand patterns before implementing decode...
+
+Decode.lean implemented, all tests green (13 decode + 80 prior). Appending progress block and committing...
+
+## 2026-06-28T22:44:03 UTC - Changes committed.
+- What was implemented: Punycode/Decode.lean — `decode : String → Except PunyError String`
+- Files changed: Punycode/Decode.lean (new), Tests/Main.lean (decode tests added), Punycode.lean (import added), ralph/todo.md (item 6 checked)
+- **Brief description of changes:**
+  - Implemented `arrayInsert` helper (ports `output.splice(i, 0, n)`)
+  - Implemented `decodeVLI` partial def — variable-length integer inner loop (punycode.js:232-261)
+  - Implemented `decodeLoop` partial def — outer main decoding loop (punycode.js:224-278)
+  - Implemented `decode` — full decoder with basic-prefix copy, extended-part VLI decode, String output
+  - Added 13 decode tests: RFC 3492 samples, error cases (notBasic, invalidInput), edge cases (ZZZ→箥, empty, emoji)
+  - All 93 tests pass (80 prior + 13 new)
+---
