@@ -20,7 +20,7 @@ so every item only depends on earlier ones.
   `PunycodeTests`), empty `Punycode.lean` root, stub `Tests/Main.lean`,
   `.gitignore` entries for `.lake/`/`build/`. `lake build` passes.
 
-- [ ] **2. `Punycode/Constants.lean` + `PunyError`.** Port the config block
+- [x] **2. `Punycode/Constants.lean` + `PunyError`.** Port the config block
   `punycode.js:1-31`: `maxInt` (`punycode.js:4`), Bootstring params `base/tMin/
   tMax/skew/damp/initialBias/initialN/delimiter` (`punycode.js:6-14`),
   `baseMinusTMin` (`punycode.js:29`), and the four separator code points for

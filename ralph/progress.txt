@@ -2,27 +2,18 @@
   Ralph Iteration 1
 ═══════════════════════════════════════════════════════
 
-Finding most important item to address from todo.md. Reading specs and current codebase state...
+Finding most important item to address from todo.md...
 
-Chose item 1 (Lean project scaffolding), it's the first of 11 build iterations.
+Chose item 2, it's the Constants+PunyError foundation of the entire Lean port.
 
-Network access confirmed. Installing elan...
-elan installed successfully. Configuring lean-toolchain...
+Created Punycode/Constants.lean with maxInt, Bootstring params, PunyError, and separator code points. Running lake build...
 
-Using Lean 4 v4.14.0 (stable LTS). Creating project files...
-
-Running lake build to verify scaffold...
-
-## 2026-06-28T21:50:58 UTC - Changes committed.
-- Installed elan v4.2.3 + Lean 4 v4.31.0 toolchain
-- Files changed: lean-toolchain, lakefile.toml, Punycode.lean, Tests/Main.lean, .gitignore, ralph/todo.md
+## 2026-06-28T21:58:21 UTC - Changes committed.
+- Implemented Punycode/Constants.lean with all RFC 3492 Bootstring parameters, PunyError type, and separator code points
+- Added 20 unit tests in Tests/Main.lean covering every constant and all three error messages
 - **Brief description of changes:**
-  - Created lean-toolchain pinned to leanprover/lean4:v4.31.0
-  - Created lakefile.toml declaring lib Punycode + exe PunycodeTests
-  - Created empty Punycode.lean root module
-  - Created stub Tests/Main.lean
-  - Updated .gitignore with .lake/ and build/ entries
-  - Marked todo item 1 as complete; lake build passes (3 jobs)
+  - Created Punycode/Constants.lean: maxInt, base/tMin/tMax/skew/damp/initialBias/initialN/delimiter, baseMinusTMin, separatorCodePoints, PunyError inductive with message strings
+  - Updated Punycode.lean root to import Punycode.Constants
+  - Replaced Tests/Main.lean stub with 20-test unit suite for Constants module
+  - Marked todo item 2 complete
 ---
-
-Push failed: no GitHub credentials (no SSH key, no GITHUB_TOKEN, no gh auth). Commit is local on branch lean. Emitting NEXT.
