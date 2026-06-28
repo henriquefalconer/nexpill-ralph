@@ -116,12 +116,13 @@ Ralph's auto-push needs cached credentials inside the sandbox. First, create a f
 - **Repository permissions:** Contents → Read and write (Metadata → Read-only auto-selects; required)
 - Generate the token and copy it once — you won't see it again.
 
-Now cache it inside the sandbox. The first `git pull` triggers the username/password prompt; paste the PAT as the password.
+Now cache it inside the sandbox. The first `git push` triggers the username/password prompt; paste the PAT as the password.
 
 ```bash
 ./ds git config --global --unset credential.helper
 ./ds git config --global credential.helper store
 ./ds git pull
+./ds git push
 # Username for 'https://github.com': <your-user>
 # Password for 'https://<your-user>@github.com': <paste the PAT — input is hidden>
 ```
