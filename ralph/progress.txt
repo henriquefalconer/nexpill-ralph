@@ -21,3 +21,28 @@ All 32 tests pass (20 Constants + 3 throwPuny + 9 mapDomain). Now updating todo.
   - [tests/ → Tests/] directory renamed to align with lakefile module path
   - [ralph/todo.md] item 3 marked done; infra notes updated with Lean keyword and BEq findings
 ---
+
+<promise>NEXT</promise>
+═══════════════════════════════════════════════════════
+  Ralph Iteration 2
+═══════════════════════════════════════════════════════
+
+Finding most important item to address from todo.md — items 1-3 are done, next is item 4 (UCS2.lean)...
+
+Chose item 4 (Punycode/UCS2.lean), it's the UCS-2 encoding/decoding layer of the Punycode library.
+
+Build failed with three issues: (1) omega can't close termination goals for ucs2decodeAux, (2) UInt32 type annotation missing in ucs2encode/stringToUCS2. Fixing now...
+
+Build succeeded. All 53 tests pass (20 constants, 3 throwPuny, 9 mapDomain, 7 ucs2decode, 7 ucs2encode, 1 ucs2encode-extra, 6 bridges).
+
+## 2026-06-28T22:23:03 UTC - Changes committed.
+- Implemented `Punycode/UCS2.lean` with ucs2decode, ucs2encode, stringToUCS2, ucs2ToString
+- Updated `Punycode.lean` to import UCS2
+- Updated `Tests/Main.lean` with full UCS2 test suite (21 new tests)
+- **Brief description of changes:**
+  - [Punycode/UCS2.lean] `ucs2decode : Array UInt16 → Array UInt32` — port of punycode.js:101-123, handles high/low surrogates and unmatched-surrogate reprocess (counter-- step); uses `partial def` since Lean omega can't close Nat.sub termination goals automatically
+  - [Punycode/UCS2.lean] `ucs2encode : Array UInt32 → Array UInt16` — port of punycode.js:133, splits supplementary-plane code points into surrogate pairs; BMP and lone surrogates pass through as-is
+  - [Punycode/UCS2.lean] `stringToUCS2 : String → Array UInt16` — bridge helper encoding Lean strings to UTF-16 code units at the API boundary
+  - [Punycode/UCS2.lean] `ucs2ToString : Array UInt16 → String` — bridge helper decoding UTF-16 to Lean string; lone surrogates are dropped (documented D2 limitation)
+  - [Tests/Main.lean] 7 ucs2decode fixture tests, 7 ucs2encode fixture tests, 1 ASCII round-trip test, 6 bridge tests
+---

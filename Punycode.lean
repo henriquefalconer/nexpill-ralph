@@ -2,3 +2,4 @@
 -- Lean 4 port of punycode.js v2.3.1
 import Punycode.Constants
 import Punycode.Helpers
+import Punycode.UCS2

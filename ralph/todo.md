@@ -39,7 +39,7 @@ so every item only depends on earlier ones.
   PunyError String)` over labels, `join "."`, reassemble (`punycode.js:84-85`).
   Spec: [`specs/impl-helpers.md`](../specs/impl-helpers.md).
 
-- [ ] **4. `Punycode/UCS2.lean` — `ucs2decode`/`ucs2encode` + UTF-16 bridges.**
+- [x] **4. `Punycode/UCS2.lean` — `ucs2decode`/`ucs2encode` + UTF-16 bridges.**
   Port `punycode.js:101-133` over `Array UInt16` per D2. `ucs2decode : Array
   UInt16 → Array UInt32` reproduces the high/low/unmatched-surrogate branches
   (`punycode.js:107-120`) and the `counter--` reprocess step (`punycode.js:116`).
@@ -47,6 +47,9 @@ so every item only depends on earlier ones.
   (`punycode.js:111`, `punycode.js:133`). Add `String ↔ Array UInt16` bridge
   helpers for the API boundary (document the lone-surrogate `String` limitation,
   D2). Spec: [`specs/impl-ucs2.md`](../specs/impl-ucs2.md).
+  **Note:** `ucs2decodeAux` uses `partial def` because Lean's `omega` tactic cannot
+  close `Nat.sub` termination goals involving `Array.size` automatically. The
+  function trivially terminates since the index `i` strictly increases every branch.
 
 - [ ] **5. `Punycode/Bootstring.lean` — `basicToDigit`, `digitToBasic`,
   `adapt`.** Port `punycode.js:144-187`. `basicToDigit` (`punycode.js:144-155`)
