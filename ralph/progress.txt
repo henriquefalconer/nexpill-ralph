@@ -2,20 +2,19 @@
   Ralph Iteration 1
 ═══════════════════════════════════════════════════════
 
-Finding most important item to address: studying every file in tests/* and documenting in specs/*.md with implementation citations...
+Finding most important item to address: studying every file in src/* with separate subagents and linking implementation citations into flat specs/*...
 
-Chose the tests/* documentation task (the only goal). tests/tests.js holds a shared testData fixture (lines 6-243) plus 6 describe suites: ucs2.decode, ucs2.encode, decode, encode, toUnicode, toASCII. Implementation is punycode.js. Fanning out one Sonnet subagent per logical unit to draft cited specs...
+Chose the source-documentation goal: there is no literal src/ directory, so the project source is punycode.js (the entire codec, 443 lines) plus scripts/prepublish.js (ES6 build tooling). Existing specs/*.md are test-centric; this iteration adds implementation-centric flat specs with punycode.js:line citations. Dispatching one subagent per logical source unit (constants, helpers, ucs2 pair, bootstring helpers, decode, encode, toASCII/toUnicode, public API, prepublish)...
 
-All 7 subagents returned cited specs (fixtures + 6 describe suites). One flagged that the decode("\x81") test is mislabeled "Overflow" but actually throws "Invalid input". Writing flat specs/*.md files...
+All 8 source-unit subagents returned citation-rich analyses (constants, generic helpers, ucs2 pair, bootstring helpers, decode, encode, domain-level/API, prepublish). Writing the flat implementation specs now...
 
-## 2026-06-28T21:14:23 UTC - Changes committed.
-- Documented every file in tests/* (one file: tests/tests.js) in flat specs/*.md with implementation citations
-- Files changed: specs/overview.md, specs/test-fixtures.md, specs/ucs2-decode.md, specs/ucs2-encode.md, specs/decode.md, specs/encode.md, specs/to-unicode.md, specs/to-ascii.md, ralph/todo.md
+## 2026-06-28T21:25:50 UTC - Changes committed.
+- Studied every source file with one subagent per logical unit; wrote flat implementation specs with punycode.js:line citations
+- Files changed: specs/impl-overview.md, specs/impl-constants.md, specs/impl-helpers.md, specs/impl-ucs2.md, specs/impl-bootstring-helpers.md, specs/impl-decode.md, specs/impl-encode.md, specs/impl-domain-api.md, specs/impl-prepublish.md, ralph/todo.md, ralph/progress.txt
 - **Brief description of changes:**
-  - Studied tests/tests.js + punycode.js with 7 parallel Sonnet subagents (one per logical unit: shared testData fixture + 6 describe suites)
-  - Wrote 8 flat spec files; every claim cites tests/tests.js:line and/or punycode.js:line
-  - overview.md maps suites to runner (mocha), implementation, and inverse pairs (decode<->encode, ucs2.decode<->ucs2.encode, toUnicode<->toASCII)
-  - Captured surrogate-handling, Bootstring algorithm, IDNA separator normalization, and email/xn-- label handling
-  - Flagged a test/code discrepancy: decode("\x81") test labeled "Overflow" actually throws "Invalid input"
-  - Wrote lean ralph/todo.md marking the goal complete
+  - No literal src/ exists; treated the project source as punycode.js (the codec) + scripts/prepublish.js (ES6 build tooling)
+  - Dispatched 8 parallel subagents (one per logical source unit) to study and cite the implementation
+  - Authored 9 flat impl-*.md specs documenting constants/regexes, generic helpers, the UCS-2 pair, bootstring digit/bias helpers, decode, encode, domain-level API + export, and the prepublish build script
+  - Every claim cites punycode.js:line (plus package.json:line / scripts/prepublish.js:line); verified package.json and .gitignore line numbers
+  - impl-overview.md indexes the set with a module layout, public API, and internal call graph; updated ralph/todo.md to mark both the src and tests documentation goals complete
 ---
