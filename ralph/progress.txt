@@ -118,3 +118,28 @@ Implemented encode and all 24 tests pass. Running commit...
   - Discovery: Lean 4 Unicode escapes require bare `\uNNNN` (no braces); RTL strings must be verified by byte inspection to avoid invisible extra characters
   - All 117 tests pass (93 prior + 24 new)
 ---
+
+<promise>NEXT</promise>
+═══════════════════════════════════════════════════════
+  Ralph Iteration 6
+═══════════════════════════════════════════════════════
+
+Finding most important item to address from todo.md — next unchecked item is iteration 8: Punycode/Domain.lean + Punycode.lean public API...
+
+Chose item 8 (Punycode/Domain.lean + Punycode.lean public API), it's the next unchecked item in todo.md.
+
+Build failed: String.drop returns String.Slice (Substring), and String.any has type inference issues. Fixing Domain.lean now...
+
+Build succeeded. All 161 tests pass across all sections including domain suites. Continuing to commit...
+
+## 2026-06-28T23:18:49 UTC - Changes committed.
+- Implemented Punycode/Domain.lean: toUnicode, toASCII, version
+- Updated Punycode.lean to import Punycode.Domain
+- Updated Tests/Main.lean: added import Punycode.Domain + 32 domain/separator tests
+- Updated ralph/todo.md: marked items 8-11 done, removed completed items 1-7
+- **Brief description of changes:**
+  - Punycode/Domain.lean: ports punycode.js:389-441; toUnicode strips xn-- prefix and decodes; toASCII checks hasNonASCII (char.val >= 0x80) and prepends xn--; version = "2.3.1"
+  - String.drop returns Substring in Lean 4.31.0 — fixed by calling .toString before .toLower
+  - String.any type inference issues fixed by a private hasNonASCII helper with explicit (c : Char) annotation
+  - 161 tests pass: Constants(20), Helpers(12), UCS2(22), Bootstring(34), Decode(13), Encode(24), Domain(36)
+---

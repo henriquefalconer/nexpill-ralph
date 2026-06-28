@@ -5,6 +5,7 @@ import Punycode.UCS2
 import Punycode.Bootstring
 import Punycode.Decode
 import Punycode.Encode
+import Punycode.Domain
 
 open Punycode
 
@@ -386,4 +387,103 @@ def main : IO Unit := do
     -- tests/tests.js strings[23]: ASCII string that breaks host-name label rules
     ("encode \"-> $1.00 <-\" = \"-> $1.00 <--\"",
      encode "-> $1.00 <-" == .ok "-> $1.00 <--"),
+  ]
+
+  IO.println "=== Punycode.Domain — version ==="
+  runTests #[
+    ("version = \"2.3.1\"", version == "2.3.1"),
+  ]
+
+  -- toUnicode tests: mirrors tests/tests.js:323-344.
+  -- Fixtures from testData.domains (tests/tests.js:176-220).
+  IO.println "=== Punycode.Domain — toUnicode (domain fixtures) ==="
+  runTests #[
+    ("toUnicode xn--maana-pta.com = mañana.com",
+     toUnicode "xn--maana-pta.com" == .ok "mañana.com"),
+    ("toUnicode example.com. = example.com. (trailing dot pass-through)",
+     toUnicode "example.com." == .ok "example.com."),
+    ("toUnicode xn--bcher-kva.com = bücher.com",
+     toUnicode "xn--bcher-kva.com" == .ok "bücher.com"),
+    ("toUnicode xn--caf-dma.com = café.com",
+     toUnicode "xn--caf-dma.com" == .ok "café.com"),
+    ("toUnicode xn----dqo34k.com = ☃-⌘.com",
+     toUnicode "xn----dqo34k.com" == .ok "☃-⌘.com"),
+    ("toUnicode xn----dqo34kn65z.com = U+D400+☃-⌘.com",
+     toUnicode "xn----dqo34kn65z.com" == .ok "퐀☃-⌘.com"),
+    ("toUnicode xn--ls8h.la = 💩.la (emoji)",
+     toUnicode "xn--ls8h.la" == .ok "💩.la"),
+    ("toUnicode \\x00\\x01\\x02foo.bar pass-through (no xn-- labels)",
+     toUnicode "\x00\x01\x02foo.bar" == .ok "\x00\x01\x02foo.bar"),
+    ("toUnicode email: Cyrillic@xn--... = Cyrillic@Cyrillic...",
+     toUnicode "джумла@xn--p-8sbkgc5ag7bhce.xn--ba-lmcq"
+       == .ok "джумла@джpумлатест.bрфa"),
+    ("toUnicode foo\\x7F.example pass-through (DEL char < 0x80)",
+     toUnicode "foo\x7F.example" == .ok "foo\x7F.example"),
+  ]
+
+  -- Passthrough: strings that don't start with xn-- are returned unchanged.
+  -- Mirrors tests/tests.js:332-344 (both encoded and decoded forms pass through).
+  IO.println "=== Punycode.Domain — toUnicode (passthrough for non-xn-- strings) ==="
+  runTests #[
+    ("toUnicode passes through encoded ASCII-only string",
+     toUnicode "Bach-" == .ok "Bach-"),
+    ("toUnicode passes through decoded Unicode string without xn-- prefix",
+     toUnicode "Bach" == .ok "Bach"),
+    ("toUnicode passes through non-ASCII string that does not start with xn--",
+     toUnicode "ü" == .ok "ü"),
+    ("toUnicode passes through Arabic encoded (no xn-- prefix)",
+     toUnicode "egbpdaj6bu4bxfgehfvwxn" == .ok "egbpdaj6bu4bxfgehfvwxn"),
+  ]
+
+  -- toASCII tests: mirrors tests/tests.js:346-371.
+  -- Fixtures from testData.domains (tests/tests.js:176-220).
+  IO.println "=== Punycode.Domain — toASCII (domain fixtures) ==="
+  runTests #[
+    ("toASCII mañana.com = xn--maana-pta.com",
+     toASCII "mañana.com" == .ok "xn--maana-pta.com"),
+    ("toASCII example.com. = example.com. (trailing dot pass-through)",
+     toASCII "example.com." == .ok "example.com."),
+    ("toASCII bücher.com = xn--bcher-kva.com",
+     toASCII "bücher.com" == .ok "xn--bcher-kva.com"),
+    ("toASCII café.com = xn--caf-dma.com",
+     toASCII "café.com" == .ok "xn--caf-dma.com"),
+    ("toASCII ☃-⌘.com = xn----dqo34k.com",
+     toASCII "☃-⌘.com" == .ok "xn----dqo34k.com"),
+    ("toASCII U+D400+☃-⌘.com = xn----dqo34kn65z.com",
+     toASCII "퐀☃-⌘.com" == .ok "xn----dqo34kn65z.com"),
+    ("toASCII 💩.la = xn--ls8h.la (emoji)",
+     toASCII "💩.la" == .ok "xn--ls8h.la"),
+    ("toASCII \\x00\\x01\\x02foo.bar pass-through (all chars < 0x80)",
+     toASCII "\x00\x01\x02foo.bar" == .ok "\x00\x01\x02foo.bar"),
+    ("toASCII email: Cyrillic@Cyrillic... = Cyrillic@xn--...",
+     toASCII "джумла@джpумлатест.bрфa"
+       == .ok "джумла@xn--p-8sbkgc5ag7bhce.xn--ba-lmcq"),
+    ("toASCII foo\\x7F.example pass-through (DEL char is < 0x80)",
+     toASCII "foo\x7F.example" == .ok "foo\x7F.example"),
+  ]
+
+  -- Passthrough: strings already in ASCII are returned unchanged.
+  -- Mirrors tests/tests.js:355-362 (encoded strings have no chars >= 0x80).
+  IO.println "=== Punycode.Domain — toASCII (passthrough for ASCII strings) ==="
+  runTests #[
+    ("toASCII passes through ASCII encoded string Bach-",
+     toASCII "Bach-" == .ok "Bach-"),
+    ("toASCII passes through ASCII encoded string tda",
+     toASCII "tda" == .ok "tda"),
+    ("toASCII passes through ASCII encoded string egbpdaj6bu4bxfgehfvwxn",
+     toASCII "egbpdaj6bu4bxfgehfvwxn" == .ok "egbpdaj6bu4bxfgehfvwxn"),
+  ]
+
+  -- Separator normalisation: U+002E/U+3002/U+FF0E/U+FF61 all become '.'.
+  -- Mirrors tests/tests.js:363-370 (testData.separators).
+  IO.println "=== Punycode.Domain — toASCII (separator normalisation) ==="
+  runTests #[
+    ("toASCII U+002E separator (standard period)",
+     toASCII "mañana\x2Ecom" == .ok "xn--maana-pta.com"),
+    ("toASCII U+3002 separator (ideographic full stop)",
+     toASCII "mañana。com" == .ok "xn--maana-pta.com"),
+    ("toASCII U+FF0E separator (fullwidth full stop)",
+     toASCII "mañana．com" == .ok "xn--maana-pta.com"),
+    ("toASCII U+FF61 separator (halfwidth ideographic full stop)",
+     toASCII "mañana｡com" == .ok "xn--maana-pta.com"),
   ]
