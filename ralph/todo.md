@@ -120,6 +120,13 @@ so every item only depends on earlier ones.
 - [ ] `RangeError`-message wrapper so error text matches JS exactly
   (`punycode.js:22-25`) for any consumer that compares messages.
 
+## Infra notes
+
+- **Push blocked**: no GitHub credentials in the environment (no SSH key, no
+  GITHUB_TOKEN, no gh auth). `gh` v2.46.0 is installed but unauthenticated.
+  Commits are local on branch `lean`. User must either provide credentials or
+  push manually: `git push origin lean`.
+
 ## Out of scope
 
 - `scripts/prepublish.js` (ES6 JS build tooling, [`specs/impl-prepublish.md`](../specs/impl-prepublish.md))
