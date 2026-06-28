@@ -1,0 +1,21 @@
+═══════════════════════════════════════════════════════
+  Ralph Iteration 1
+═══════════════════════════════════════════════════════
+
+Finding most important item to address: studying every file in tests/* and documenting in specs/*.md with implementation citations...
+
+Chose the tests/* documentation task (the only goal). tests/tests.js holds a shared testData fixture (lines 6-243) plus 6 describe suites: ucs2.decode, ucs2.encode, decode, encode, toUnicode, toASCII. Implementation is punycode.js. Fanning out one Sonnet subagent per logical unit to draft cited specs...
+
+All 7 subagents returned cited specs (fixtures + 6 describe suites). One flagged that the decode("\x81") test is mislabeled "Overflow" but actually throws "Invalid input". Writing flat specs/*.md files...
+
+## 2026-06-28T21:14:23 UTC - Changes committed.
+- Documented every file in tests/* (one file: tests/tests.js) in flat specs/*.md with implementation citations
+- Files changed: specs/overview.md, specs/test-fixtures.md, specs/ucs2-decode.md, specs/ucs2-encode.md, specs/decode.md, specs/encode.md, specs/to-unicode.md, specs/to-ascii.md, ralph/todo.md
+- **Brief description of changes:**
+  - Studied tests/tests.js + punycode.js with 7 parallel Sonnet subagents (one per logical unit: shared testData fixture + 6 describe suites)
+  - Wrote 8 flat spec files; every claim cites tests/tests.js:line and/or punycode.js:line
+  - overview.md maps suites to runner (mocha), implementation, and inverse pairs (decode<->encode, ucs2.decode<->ucs2.encode, toUnicode<->toASCII)
+  - Captured surrogate-handling, Bootstring algorithm, IDNA separator normalization, and email/xn-- label handling
+  - Flagged a test/code discrepancy: decode("\x81") test labeled "Overflow" actually throws "Invalid input"
+  - Wrote lean ralph/todo.md marking the goal complete
+---
