@@ -29,7 +29,7 @@ so every item only depends on earlier ones.
   `PunyError.message : String` returning the exact strings `punycode.js:22-25`.
   All as `Nat`/`UInt32` per D3. Spec: [`specs/impl-constants.md`](../specs/impl-constants.md).
 
-- [ ] **3. `Punycode/Helpers.lean` — `error`, `map`, `mapDomain`.** Port
+- [x] **3. `Punycode/Helpers.lean` — `error`, `map`, `mapDomain`.** Port
   `punycode.js:41-86`. `error` → `Except.error` over `PunyError` (D1). `map`
   (`punycode.js:53-60`) → `Array.map`/`List.map` (reverse-traversal detail is
   irrelevant once order-preserving). `mapDomain` (`punycode.js:72-86`): split on
@@ -126,6 +126,16 @@ so every item only depends on earlier ones.
   GITHUB_TOKEN, no gh auth). `gh` v2.46.0 is installed but unauthenticated.
   Commits are local on branch `lean`. User must either provide credentials or
   push manually: `git push origin lean`.
+
+- **`tests/` renamed to `Tests/`**: done in iteration 3 to match `lakefile.toml`
+  (`root = "Tests.Main"`) and the spec layout table.
+
+- **`BEq (Except ε α)` instance**: `Except` has no `BEq` in Lean core; added a
+  manual instance in `Tests/Main.lean` (requires `[BEq ε] [BEq α]`). Future test
+  modules must import this or re-declare it.
+
+- **`prefix` is a Lean 4 keyword** (notation declaration command); do not use it
+  as a variable name. Use `emailPfx`, `pfx`, or similar.
 
 ## Out of scope
 

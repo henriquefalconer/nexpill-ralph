@@ -2,18 +2,22 @@
   Ralph Iteration 1
 ═══════════════════════════════════════════════════════
 
-Finding most important item to address from todo.md...
+Finding most important item to address from todo.md (item 3: Punycode/Helpers.lean)...
 
-Chose item 2, it's the Constants+PunyError foundation of the entire Lean port.
+Chose item 3 (Punycode/Helpers.lean), it's the next required step after Constants.lean.
 
-Created Punycode/Constants.lean with maxInt, Bootstring params, PunyError, and separator code points. Running lake build...
+Found: test directory is 'tests/' but lakefile references 'Tests.Main' (capital T). Need to rename to match spec layout. lake build currently passes (library only, tests excluded from defaultTargets).
 
-## 2026-06-28T21:58:21 UTC - Changes committed.
-- Implemented Punycode/Constants.lean with all RFC 3492 Bootstring parameters, PunyError type, and separator code points
-- Added 20 unit tests in Tests/Main.lean covering every constant and all three error messages
+All 32 tests pass (20 Constants + 3 throwPuny + 9 mapDomain). Now updating todo.md and committing...
+
+## 2026-06-28T22:08:46 UTC - Changes committed.
+- Implemented Punycode/Helpers.lean (throwPuny, normalizeSeparators, mapDomain)
+- Renamed tests/ → Tests/ to match lakefile.toml root = "Tests.Main" and spec layout
+- Added BEq (Except ε α) instance and Helpers test suite to Tests/Main.lean
+- Updated Punycode.lean to import Punycode.Helpers
 - **Brief description of changes:**
-  - Created Punycode/Constants.lean: maxInt, base/tMin/tMax/skew/damp/initialBias/initialN/delimiter, baseMinusTMin, separatorCodePoints, PunyError inductive with message strings
-  - Updated Punycode.lean root to import Punycode.Constants
-  - Replaced Tests/Main.lean stub with 20-test unit suite for Constants module
-  - Marked todo item 2 complete
+  - [Punycode/Helpers.lean] ports punycode.js:41-86: throwPuny (error→Except), normalizeSeparators (regexSeparators replace without regex), mapDomain (email-local preservation + separator normalisation + label-wise Except callback)
+  - [Tests/Main.lean] 9 new mapDomain tests + 3 throwPuny tests; BEq instance for Except
+  - [tests/ → Tests/] directory renamed to align with lakefile module path
+  - [ralph/todo.md] item 3 marked done; infra notes updated with Lean keyword and BEq findings
 ---
