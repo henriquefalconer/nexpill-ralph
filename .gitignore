@@ -1,6 +1,10 @@
 # Generated files
 punycode.es6.js
 
+# Lean 4 / Lake build outputs
+.lake/
+build/
+
 # Coverage report
 coverage
 

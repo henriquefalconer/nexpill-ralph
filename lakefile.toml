@@ -1,0 +1,10 @@
+name = "Punycode"
+version = "0.1.0"
+defaultTargets = ["Punycode"]
+
+[[lean_lib]]
+name = "Punycode"
+
+[[lean_exe]]
+name = "PunycodeTests"
+root = "Tests.Main"

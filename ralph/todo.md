@@ -15,13 +15,10 @@ so every item only depends on earlier ones.
 
 ## Build iterations (prioritized, top = do next)
 
-- [ ] **1. Lean project scaffolding.** Install `elan` (provides `lake`/`lean`;
-  needs network to the Lean release hosts — see `specs/lean-port.md` §Prerequisites,
-  request firewall access if blocked). Add `lean-toolchain` (pin a recent stable
-  Lean 4), `lakefile.toml` declaring lib `Punycode` + a test exe, an empty
-  `Punycode.lean` root, and `.gitignore` for `.lake/`/`build/`. Verify `lake build`
-  succeeds on the empty lib. No Mathlib. Ref: `specs/lean-port.md` §Target file
-  layout / §Prerequisites.
+- [x] **1. Lean project scaffolding.** Installed `elan` v4.2.3 + Lean 4 v4.31.0
+  (pinned in `lean-toolchain`). Created `lakefile.toml` (lib `Punycode` + exe
+  `PunycodeTests`), empty `Punycode.lean` root, stub `Tests/Main.lean`,
+  `.gitignore` entries for `.lake/`/`build/`. `lake build` passes.
 
 - [ ] **2. `Punycode/Constants.lean` + `PunyError`.** Port the config block
   `punycode.js:1-31`: `maxInt` (`punycode.js:4`), Bootstring params `base/tMin/
