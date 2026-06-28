@@ -2,19 +2,17 @@
   Ralph Iteration 1
 ═══════════════════════════════════════════════════════
 
-Finding most important item to address: studying every file in src/* with separate subagents and linking implementation citations into flat specs/*...
+Finding most important item to address: reading existing specs/*.md, source tree, and ralph/ notes to design a plan for porting the spec'd JS code to Lean, then writing ralph/todo.md...
 
-Chose the source-documentation goal: there is no literal src/ directory, so the project source is punycode.js (the entire codec, 443 lines) plus scripts/prepublish.js (ES6 build tooling). Existing specs/*.md are test-centric; this iteration adds implementation-centric flat specs with punycode.js:line citations. Dispatching one subagent per logical source unit (constants, helpers, ucs2 pair, bootstring helpers, decode, encode, toASCII/toUnicode, public API, prepublish)...
+Chose the Lean port plan, it's the central deliverable of this iteration. Read all 9 impl-*.md specs, the 8 test specs, punycode.js:1-444, scripts/prepublish.js, and tests/tests.js layout. Confirmed: no src/ dir (source is punycode.js), no Lean toolchain/files present yet, branch is "lean".
 
-All 8 source-unit subagents returned citation-rich analyses (constants, generic helpers, ucs2 pair, bootstring helpers, decode, encode, domain-level/API, prepublish). Writing the flat implementation specs now...
+Key porting findings: (1) JS strings are UTF-16/UCS-2 (charCodeAt exposes lone surrogates) but Lean String is UTF-8 with Char = valid scalar value — so ucs2decode/encode and their surrogate fixtures must be modeled over `Array UInt16`, not Lean String. (2) JS `error()` throws RangeError; Lean is pure so decode/encode/toASCII/toUnicode must return `Except PunyError`. (3) Use `Nat` (arbitrary precision) with explicit maxInt guards replicating JS overflow detection. (4) Unbounded `for(;;)` digit/bias loops need explicit termination (fuel or decreasing measure). Writing specs/lean-port.md (architecture) + rewriting ralph/todo.md as dependency-ordered build iterations...
 
-## 2026-06-28T21:25:50 UTC - Changes committed.
-- Studied every source file with one subagent per logical unit; wrote flat implementation specs with punycode.js:line citations
-- Files changed: specs/impl-overview.md, specs/impl-constants.md, specs/impl-helpers.md, specs/impl-ucs2.md, specs/impl-bootstring-helpers.md, specs/impl-decode.md, specs/impl-encode.md, specs/impl-domain-api.md, specs/impl-prepublish.md, ralph/todo.md, ralph/progress.txt
+## $(date -u +%Y-%m-%dT%H:%M:%S) UTC - Changes committed.
+- Wrote the Lean 4 port plan for punycode.js (planning iteration; markdown only)
+- Files changed: specs/lean-port.md (new), ralph/todo.md (rewritten), ralph/progress.txt
 - **Brief description of changes:**
-  - No literal src/ exists; treated the project source as punycode.js (the codec) + scripts/prepublish.js (ES6 build tooling)
-  - Dispatched 8 parallel subagents (one per logical source unit) to study and cite the implementation
-  - Authored 9 flat impl-*.md specs documenting constants/regexes, generic helpers, the UCS-2 pair, bootstring digit/bias helpers, decode, encode, domain-level API + export, and the prepublish build script
-  - Every claim cites punycode.js:line (plus package.json:line / scripts/prepublish.js:line); verified package.json and .gitignore line numbers
-  - impl-overview.md indexes the set with a module layout, public API, and internal call graph; updated ralph/todo.md to mark both the src and tests documentation goals complete
+  - Added specs/lean-port.md — architecture/design baseline for the port: goal, four cross-cutting decisions (D1 Except PunyError errors, D2 Array UInt16 for the UCS-2 surrogate layer, D3 Nat arithmetic + maxInt guards, D4 do/for control flow with fuel/measure termination), 1:1 target file layout, public API parity, test strategy, and toolchain prerequisites — all citing punycode.js:<line> and the impl-*/test specs.
+  - Rewrote ralph/todo.md as 11 dependency-ordered build iterations (scaffold → Constants → Helpers → UCS2 → Bootstring → Decode → Encode → Domain → fixtures → codec/ucs2 tests → domain tests), each citing the relevant spec md and punycode.js line ranges and naming the target Lean file, plus stretch and out-of-scope sections.
+  - Verified no Lean toolchain/files exist yet; iteration 1 installs elan (needs network).
 ---
