@@ -94,3 +94,27 @@ Decode.lean implemented, all tests green (13 decode + 80 prior). Appending progr
   - Added 13 decode tests: RFC 3492 samples, error cases (notBasic, invalidInput), edge cases (ZZZ→箥, empty, emoji)
   - All 93 tests pass (80 prior + 13 new)
 ---
+
+<promise>NEXT</promise>
+═══════════════════════════════════════════════════════
+  Ralph Iteration 5
+═══════════════════════════════════════════════════════
+
+Finding most important item to address from todo.md — reading specs for iteration 7 (Encode)...
+
+Chose item 7 (Punycode/Encode.lean), it's the main encode function needed before the public API and tests.
+
+Implemented encode and all 24 tests pass. Running commit...
+
+## 2026-06-28T23:06:43 UTC - Changes committed.
+- What was implemented: Punycode/Encode.lean — `encode : String → Except PunyError String`
+- Files changed: Punycode/Encode.lean (new), Tests/Main.lean (24 encode tests added + import), Punycode.lean (import added), ralph/todo.md (item 7 checked + infra notes)
+- **Brief description of changes:**
+  - [Punycode/Encode.lean] `encodeVLI` partial def — VLI digit emission inner loop (punycode.js:351-362); termination: q strictly decreases but unprovable automatically
+  - [Punycode/Encode.lean] `encodeInnerPass` — per-code-point pass using `for` loop with mutable vars in Except monad (punycode.js:344-369)
+  - [Punycode/Encode.lean] `encodeLoop` partial def — outer main encoding loop (punycode.js:323-374)
+  - [Punycode/Encode.lean] `encode` — public function: UCS-2 bridge + basic-point copy + delimiter + loop → String.ofList
+  - [Tests/Main.lean] 24 encode tests: all testData.strings fixtures (RFC 3492 samples in 8 languages, pure ASCII, mixed ASCII/non-ASCII)
+  - Discovery: Lean 4 Unicode escapes require bare `\uNNNN` (no braces); RTL strings must be verified by byte inspection to avoid invisible extra characters
+  - All 117 tests pass (93 prior + 24 new)
+---

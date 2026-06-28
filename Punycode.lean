@@ -5,3 +5,4 @@ import Punycode.Helpers
 import Punycode.UCS2
 import Punycode.Bootstring
 import Punycode.Decode
+import Punycode.Encode

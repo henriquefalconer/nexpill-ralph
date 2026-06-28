@@ -76,7 +76,7 @@ so every item only depends on earlier ones.
   behaviour (D1). Spec: [`specs/impl-decode.md`](../specs/impl-decode.md).
   **Note:** `decodeVLI` and `decodeLoop` use `partial def` (same pattern): Lean cannot prove termination of the VLI digit-accumulation loop automatically; the loops trivially terminate since `index` strictly increases on every iteration.
 
-- [ ] **7. `Punycode/Encode.lean` — `encode`.** Port `punycode.js:290-376` →
+- [x] **7. `Punycode/Encode.lean` — `encode`.** Port `punycode.js:290-376` →
   `encode : String → Except PunyError String`. `ucs2decode` the input
   (`punycode.js:294`, via UCS2 module); state `punycode.js:300-302`; basic-points
   + delimiter `punycode.js:305-320`; main loop `punycode.js:323-374` — next-min
@@ -144,6 +144,17 @@ so every item only depends on earlier ones.
 
 - **`prefix` is a Lean 4 keyword** (notation declaration command); do not use it
   as a variable name. Use `emailPfx`, `pfx`, or similar.
+
+- **Lean 4 Unicode string escapes**: use the direct Unicode character (UTF-8 in source)
+  or `\uNNNN` syntax (4 hex digits, NO braces). The `\u{NNNN}` brace form is NOT
+  supported and gives "invalid hexadecimal numeral". For RTL scripts (Arabic/Hebrew),
+  embed the Unicode bytes directly (source is UTF-8) and verify with Python to ensure
+  the byte order matches the logical code point order. Encode and non-ASCII tests both
+  use direct Unicode characters in string literals.
+
+- **`Array.foldlM` for inner loops**: `encodeInnerPass` uses `for cp in codePoints do`
+  with mutable `let mut` variables inside an `Except` `do` block — this works in Lean 4
+  (`for` loops propagate monadic effects including `throw`).
 
 ## Out of scope
 

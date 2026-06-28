@@ -4,6 +4,7 @@ import Punycode.Helpers
 import Punycode.UCS2
 import Punycode.Bootstring
 import Punycode.Decode
+import Punycode.Encode
 
 open Punycode
 
@@ -297,4 +298,92 @@ def main : IO Unit := do
     -- ASCII string that breaks host-name rules: tests/tests.js:131-135.
     ("decode \"-> $1.00 <--\" = \"-> $1.00 <-\"",
      decode "-> $1.00 <--" == .ok "-> $1.00 <-"),
+  ]
+
+  -- Encode tests: mirror punycode.encode(object.decoded) === object.encoded
+  -- over all testData.strings fixtures (tests/tests.js:312-321).
+  IO.println "=== Punycode.Encode — encode ==="
+  runTests #[
+    -- tests/tests.js strings[0]: a single basic code point
+    ("encode \"Bach\" = \"Bach-\"",
+     encode "Bach" == .ok "Bach-"),
+    -- tests/tests.js strings[1]: a single non-ASCII character (U+00FC)
+    ("encode \"ü\" = \"tda\"",
+     encode "ü" == .ok "tda"),
+    -- tests/tests.js strings[2]: multiple non-ASCII characters
+    ("encode \"üëäö♥\" = \"4can8av2009b\"",
+     encode "üëäö♥" == .ok "4can8av2009b"),
+    -- tests/tests.js strings[3]: mix of ASCII and non-ASCII
+    ("encode \"bücher\" = \"bcher-kva\"",
+     encode "bücher" == .ok "bcher-kva"),
+    -- tests/tests.js strings[4]: long string with both ASCII and non-ASCII
+    ("encode long German string",
+     encode "Willst du die Blüthe des frühen, die Früchte des späteren Jahres"
+       == .ok "Willst du die Blthe des frhen, die Frchte des spteren Jahres-x9e96lkal"),
+    -- tests/tests.js strings[5]: Arabic (Egyptian) — RFC 3492 §7.1
+    ("encode Arabic (Egyptian)",
+     encode "ليهمابتكلموشعربي؟"
+       == .ok "egbpdaj6bu4bxfgehfvwxn"),
+    -- tests/tests.js strings[6]: Chinese (simplified) — RFC 3492 §7.1
+    ("encode Chinese (simplified)",
+     encode "他们为什么不说中文" == .ok "ihqwcrb4cv8a8dqg056pqjye"),
+    -- tests/tests.js strings[7]: Chinese (traditional) — RFC 3492 §7.1
+    ("encode Chinese (traditional)",
+     encode "他們爲什麽不說中文" == .ok "ihqwctvzc91f659drss3x8bo0yb"),
+    -- tests/tests.js strings[8]: Czech — RFC 3492 §7.1
+    ("encode Czech",
+     encode "Pročprostěnemluvíčesky" == .ok "Proprostnemluvesky-uyb24dma41a"),
+    -- tests/tests.js strings[9]: Hebrew — RFC 3492 §7.1
+    ("encode Hebrew",
+     encode "למההםפשוטלאמדבריםעברית"
+       == .ok "4dbcagdahymbxekheh6e0a7fei0b"),
+    -- tests/tests.js strings[10]: Hindi (Devanagari) — RFC 3492 §7.1
+    ("encode Hindi (Devanagari)",
+     encode "यहलोगहिन्दीक्योंनहींबोलसकतेहैं"
+       == .ok "i1baa7eci9glrd9b2ae1bj0hfcgg6iyaf8o0a1dig0cd"),
+    -- tests/tests.js strings[11]: Japanese (kanji and hiragana) — RFC 3492 §7.1
+    ("encode Japanese (kanji and hiragana)",
+     encode "なぜみんな日本語を話してくれないのか"
+       == .ok "n8jok5ay5dzabd5bym9f0cm5685rrjetr6pdxa"),
+    -- tests/tests.js strings[12]: Korean (Hangul syllables) — RFC 3492 §7.1
+    ("encode Korean (Hangul syllables)",
+     encode "세계의모든사람들이한국어를이해한다면얼마나좋을까"
+       == .ok "989aomsvi5e83db1d2a355cv1e0vak1dwrv93d5xbh15a0dt30a5jpsd879ccm6fea98c"),
+    -- tests/tests.js strings[13]: Russian (Cyrillic) — RFC 3492 §7.1
+    ("encode Russian (Cyrillic)",
+     encode "почемужеонинеговорятпорусски"
+       == .ok "b1abfaaepdrnnbgefbadotcwatmq2g4l"),
+    -- tests/tests.js strings[14]: Spanish — RFC 3492 §7.1
+    ("encode Spanish",
+     encode "PorquénopuedensimplementehablarenEspañol"
+       == .ok "PorqunopuedensimplementehablarenEspaol-fmd56a"),
+    -- tests/tests.js strings[15]: Vietnamese — RFC 3492 §7.1
+    ("encode Vietnamese",
+     encode "TạisaohọkhôngthểchỉnóitiếngViệt"
+       == .ok "TisaohkhngthchnitingVit-kjcr8268qyxafd2f1b9g"),
+    -- tests/tests.js strings[16]
+    ("encode \"3年B組金八先生\"",
+     encode "3年B組金八先生" == .ok "3B-ww4c5e180e575a65lsy2b"),
+    -- tests/tests.js strings[17]
+    ("encode \"安室奈美恵-with-SUPER-MONKEYS\"",
+     encode "安室奈美恵-with-SUPER-MONKEYS" == .ok "-with-SUPER-MONKEYS-pc58ag80a8qai00g7n9n"),
+    -- tests/tests.js strings[18]
+    ("encode \"Hello-Another-Way-それぞれの場所\"",
+     encode "Hello-Another-Way-それぞれの場所"
+       == .ok "Hello-Another-Way--fc4qua05auwb3674vfr0b"),
+    -- tests/tests.js strings[19]
+    ("encode \"ひとつ屋根の下2\"",
+     encode "ひとつ屋根の下2" == .ok "2-u9tlzr9756bt3uc0v"),
+    -- tests/tests.js strings[20]
+    ("encode \"MajiでKoiする5秒前\"",
+     encode "MajiでKoiする5秒前" == .ok "MajiKoi5-783gue6qz075azm5e"),
+    -- tests/tests.js strings[21]
+    ("encode \"パフィーdeルンバ\"",
+     encode "パフィーdeルンバ" == .ok "de-jg4avhby1noc0d"),
+    -- tests/tests.js strings[22]
+    ("encode \"そのスピードで\"",
+     encode "そのスピードで" == .ok "d9juau41awczczp"),
+    -- tests/tests.js strings[23]: ASCII string that breaks host-name label rules
+    ("encode \"-> $1.00 <-\" = \"-> $1.00 <--\"",
+     encode "-> $1.00 <-" == .ok "-> $1.00 <--"),
   ]
